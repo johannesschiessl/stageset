@@ -6,9 +6,12 @@ interface Props {
   onAddMic: () => void;
   onAddElement: (kind: ElementKind) => void;
   onAddZone: () => void;
+  zoomPercent: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 }
 
-export function StagePlanToolbar({ onAddMic, onAddElement, onAddZone }: Props) {
+export function StagePlanToolbar({ onAddMic, onAddElement, onAddZone, zoomPercent, onZoomIn, onZoomOut }: Props) {
   const [equipOpen, setEquipOpen] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +55,12 @@ export function StagePlanToolbar({ onAddMic, onAddElement, onAddZone }: Props) {
 
       <button className="toolbar-btn object" onClick={() => onAddElement("object")}>+ Object</button>
       <button className="toolbar-btn zone" onClick={onAddZone}>+ Zone</button>
+
+      <div className="toolbar-separator" />
+
+      <button className="toolbar-btn zoom" onClick={onZoomOut}>- Zoom</button>
+      <button className="toolbar-btn zoom" onClick={onZoomIn}>+ Zoom</button>
+      <span className="toolbar-zoom-readout">{zoomPercent}%</span>
     </div>
   );
 }

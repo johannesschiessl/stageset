@@ -6,12 +6,14 @@ const MIN_SIZE = 60;
 
 interface Props {
   zone: Zone;
+  scale: number;
+  canvasOffset: number;
   onDragEnd: (id: number | string, x: number, y: number) => void;
   onResize: (id: number | string, width: number, height: number) => void;
   onTap: (zone: Zone) => void;
 }
 
-export function ZoneItem({ zone, onDragEnd, onResize, onTap }: Props) {
+export function ZoneItem({ zone, scale, canvasOffset, onDragEnd, onResize, onTap }: Props) {
   const startPos = useRef({ x: 0, y: 0, elX: 0, elY: 0 });
   const moved = useRef(false);
   const posRef = useRef({ x: zone.x, y: zone.y });
@@ -32,20 +34,22 @@ export function ZoneItem({ zone, onDragEnd, onResize, onTap }: Props) {
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!elRef.current?.hasPointerCapture(e.pointerId)) return;
-    const dx = e.clientX - startPos.current.x;
-    const dy = e.clientY - startPos.current.y;
-    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+    const rawDx = e.clientX - startPos.current.x;
+    const rawDy = e.clientY - startPos.current.y;
+    const dx = rawDx / scale;
+    const dy = rawDy / scale;
+    if (Math.abs(rawDx) > DRAG_THRESHOLD || Math.abs(rawDy) > DRAG_THRESHOLD) {
       moved.current = true;
     }
     if (moved.current) {
-      const newX = Math.max(0, startPos.current.elX + dx);
-      const newY = Math.max(0, startPos.current.elY + dy);
+      const newX = startPos.current.elX + dx;
+      const newY = startPos.current.elY + dy;
       posRef.current = { x: newX, y: newY };
       const el = elRef.current;
-      el.style.left = `${newX}px`;
-      el.style.top = `${newY}px`;
+      el.style.left = `${newX + canvasOffset}px`;
+      el.style.top = `${newY + canvasOffset}px`;
     }
-  }, []);
+  }, [canvasOffset, scale]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     const el = elRef.current;
@@ -76,11 +80,11 @@ export function ZoneItem({ zone, onDragEnd, onResize, onTap }: Props) {
     const handle = handleRef.current;
     const parent = elRef.current;
     if (!handle?.hasPointerCapture(e.pointerId) || !parent) return;
-    const dx = e.clientX - startRef.current.x;
-    const dy = e.clientY - startRef.current.y;
+    const dx = (e.clientX - startRef.current.x) / scale;
+    const dy = (e.clientY - startRef.current.y) / scale;
     parent.style.width = `${Math.max(MIN_SIZE, startRef.current.w + dx)}px`;
     parent.style.height = `${Math.max(MIN_SIZE, startRef.current.h + dy)}px`;
-  }, []);
+  }, [scale]);
 
   const resizeUp = useCallback((e: React.PointerEvent) => {
     const handle = handleRef.current;
@@ -95,8 +99,8 @@ export function ZoneItem({ zone, onDragEnd, onResize, onTap }: Props) {
       ref={elRef}
       className="zone-item"
       style={{
-        left: zone.x,
-        top: zone.y,
+        left: zone.x + canvasOffset,
+        top: zone.y + canvasOffset,
         width: zone.width,
         height: zone.height,
         borderColor: zone.color,

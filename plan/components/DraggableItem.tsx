@@ -14,12 +14,14 @@ const KIND_ICONS: Record<string, string> = {
 interface Props {
   item: Mic | StageElement;
   isMic: boolean;
+  scale: number;
+  canvasOffset: number;
   onDragEnd: (id: number | string, x: number, y: number) => void;
   onTap: (item: Mic | StageElement) => void;
   onResize?: (id: number | string, width: number, height: number) => void;
 }
 
-export function DraggableItem({ item, isMic, onDragEnd, onTap, onResize }: Props) {
+export function DraggableItem({ item, isMic, scale, canvasOffset, onDragEnd, onTap, onResize }: Props) {
   const startPos = useRef({ x: 0, y: 0, elX: 0, elY: 0 });
   const moved = useRef(false);
   const posRef = useRef({ x: item.x, y: item.y });
@@ -45,20 +47,22 @@ export function DraggableItem({ item, isMic, onDragEnd, onTap, onResize }: Props
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!elRef.current?.hasPointerCapture(e.pointerId)) return;
-    const dx = e.clientX - startPos.current.x;
-    const dy = e.clientY - startPos.current.y;
-    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+    const rawDx = e.clientX - startPos.current.x;
+    const rawDy = e.clientY - startPos.current.y;
+    const dx = rawDx / scale;
+    const dy = rawDy / scale;
+    if (Math.abs(rawDx) > DRAG_THRESHOLD || Math.abs(rawDy) > DRAG_THRESHOLD) {
       moved.current = true;
     }
     if (moved.current) {
-      const newX = Math.max(0, startPos.current.elX + dx);
-      const newY = Math.max(0, startPos.current.elY + dy);
+      const newX = startPos.current.elX + dx;
+      const newY = startPos.current.elY + dy;
       posRef.current = { x: newX, y: newY };
       const el = elRef.current;
-      el.style.left = `${newX}px`;
-      el.style.top = `${newY}px`;
+      el.style.left = `${newX + canvasOffset}px`;
+      el.style.top = `${newY + canvasOffset}px`;
     }
-  }, []);
+  }, [canvasOffset, scale]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     const el = elRef.current;
@@ -82,7 +86,7 @@ export function DraggableItem({ item, isMic, onDragEnd, onTap, onResize }: Props
     <div
       ref={elRef}
       className={`stage-item ${kind}`}
-      style={{ left: item.x, top: item.y, ...sizeStyle }}
+      style={{ left: item.x + canvasOffset, top: item.y + canvasOffset, ...sizeStyle }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -101,16 +105,17 @@ export function DraggableItem({ item, isMic, onDragEnd, onTap, onResize }: Props
         </>
       )}
       {isResizable && onResize && (
-        <ResizeHandle itemId={item.id} parentRef={elRef} onResize={onResize} />
+        <ResizeHandle itemId={item.id} parentRef={elRef} onResize={onResize} scale={scale} />
       )}
     </div>
   );
 }
 
-function ResizeHandle({ itemId, parentRef, onResize }: {
+function ResizeHandle({ itemId, parentRef, onResize, scale }: {
   itemId: number | string;
   parentRef: React.RefObject<HTMLDivElement | null>;
   onResize: (id: number | string, w: number, h: number) => void;
+  scale: number;
 }) {
   const startRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
   const handleRef = useRef<HTMLDivElement>(null);
@@ -134,13 +139,13 @@ function ResizeHandle({ itemId, parentRef, onResize }: {
     const handle = handleRef.current;
     const parent = parentRef.current;
     if (!handle?.hasPointerCapture(e.pointerId) || !parent) return;
-    const dx = e.clientX - startRef.current.x;
-    const dy = e.clientY - startRef.current.y;
+    const dx = (e.clientX - startRef.current.x) / scale;
+    const dy = (e.clientY - startRef.current.y) / scale;
     const newW = Math.max(MIN_SIZE, startRef.current.w + dx);
     const newH = Math.max(MIN_SIZE, startRef.current.h + dy);
     parent.style.width = `${newW}px`;
     parent.style.height = `${newH}px`;
-  }, [parentRef]);
+  }, [parentRef, scale]);
 
   const handleUp = useCallback((e: React.PointerEvent) => {
     const handle = handleRef.current;
