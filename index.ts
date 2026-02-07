@@ -1,34 +1,34 @@
-import planPage from "./plan/plan.html";
 import {
-  getFullState,
-  createMic,
-  updateMic,
-  deleteMic,
-  createElement,
-  updateElement,
-  deleteElement,
-  createZone,
-  updateZone,
-  deleteZone,
   createColumn,
-  updateColumn,
-  deleteColumn,
-  reorderColumns,
-  createSong,
-  updateSong,
-  deleteSong,
-  reorderSongs,
-  upsertCell,
+  createElement,
+  createMic,
   createNotificationPreset,
-  updateNotificationPreset,
+  createShow,
+  createSong,
+  createZone,
+  deleteColumn,
+  deleteElement,
+  deleteMic,
   deleteNotificationPreset,
+  deleteShow,
+  deleteSong,
+  deleteZone,
+  getCurrentShowName,
+  getFullState,
   getNotificationPreset,
   listShows,
+  reorderColumns,
+  reorderSongs,
   selectShow,
-  createShow,
-  deleteShow,
-  getCurrentShowName,
+  updateColumn,
+  updateElement,
+  updateMic,
+  updateNotificationPreset,
+  updateSong,
+  updateZone,
+  upsertCell,
 } from "./db";
+import page from "./public/index.html";
 
 const clients = new Set<any>();
 
@@ -74,7 +74,12 @@ function handlePlanMessage(data: any, sender: any) {
     switch (data.type) {
       case "mic:create": {
         result = createMic(data.data);
-        broadcastMsg = { scope: "plan", type: "mic:created", data: result, tempId: data.tempId };
+        broadcastMsg = {
+          scope: "plan",
+          type: "mic:created",
+          data: result,
+          tempId: data.tempId,
+        };
         break;
       }
       case "mic:update": {
@@ -90,7 +95,12 @@ function handlePlanMessage(data: any, sender: any) {
       }
       case "element:create": {
         result = createElement(data.data);
-        broadcastMsg = { scope: "plan", type: "element:created", data: result, tempId: data.tempId };
+        broadcastMsg = {
+          scope: "plan",
+          type: "element:created",
+          data: result,
+          tempId: data.tempId,
+        };
         break;
       }
       case "element:update": {
@@ -106,7 +116,12 @@ function handlePlanMessage(data: any, sender: any) {
       }
       case "column:create": {
         result = createColumn(data.data);
-        broadcastMsg = { scope: "plan", type: "column:created", data: result, tempId: data.tempId };
+        broadcastMsg = {
+          scope: "plan",
+          type: "column:created",
+          data: result,
+          tempId: data.tempId,
+        };
         break;
       }
       case "column:update": {
@@ -122,12 +137,21 @@ function handlePlanMessage(data: any, sender: any) {
       }
       case "columns:reorder": {
         reorderColumns(data.order);
-        broadcastMsg = { scope: "plan", type: "columns:reordered", order: data.order };
+        broadcastMsg = {
+          scope: "plan",
+          type: "columns:reordered",
+          order: data.order,
+        };
         break;
       }
       case "song:create": {
         result = createSong(data.data);
-        broadcastMsg = { scope: "plan", type: "song:created", data: result, tempId: data.tempId };
+        broadcastMsg = {
+          scope: "plan",
+          type: "song:created",
+          data: result,
+          tempId: data.tempId,
+        };
         break;
       }
       case "song:update": {
@@ -143,12 +167,21 @@ function handlePlanMessage(data: any, sender: any) {
       }
       case "songs:reorder": {
         reorderSongs(data.order);
-        broadcastMsg = { scope: "plan", type: "songs:reordered", order: data.order };
+        broadcastMsg = {
+          scope: "plan",
+          type: "songs:reordered",
+          order: data.order,
+        };
         break;
       }
       case "zone:create": {
         result = createZone(data.data);
-        broadcastMsg = { scope: "plan", type: "zone:created", data: result, tempId: data.tempId };
+        broadcastMsg = {
+          scope: "plan",
+          type: "zone:created",
+          data: result,
+          tempId: data.tempId,
+        };
         break;
       }
       case "zone:update": {
@@ -170,26 +203,44 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "notificationPreset:create": {
-        result = createNotificationPreset(parseNotificationPresetInput(data.data));
-        broadcastMsg = { scope: "plan", type: "notificationPreset:created", data: result };
+        result = createNotificationPreset(
+          parseNotificationPresetInput(data.data),
+        );
+        broadcastMsg = {
+          scope: "plan",
+          type: "notificationPreset:created",
+          data: result,
+        };
         break;
       }
       case "notificationPreset:update": {
         const id = asInt(data.id, "notification preset id");
-        result = updateNotificationPreset(id, parseNotificationPresetInput(data.data));
-        broadcastMsg = { scope: "plan", type: "notificationPreset:updated", data: result };
+        result = updateNotificationPreset(
+          id,
+          parseNotificationPresetInput(data.data),
+        );
+        broadcastMsg = {
+          scope: "plan",
+          type: "notificationPreset:updated",
+          data: result,
+        };
         break;
       }
       case "notificationPreset:delete": {
         const id = asInt(data.id, "notification preset id");
         deleteNotificationPreset(id);
-        broadcastMsg = { scope: "plan", type: "notificationPreset:deleted", id };
+        broadcastMsg = {
+          scope: "plan",
+          type: "notificationPreset:deleted",
+          id,
+        };
         break;
       }
       case "notification:trigger": {
         const id = asInt(data.id, "notification preset id");
         const notification = getNotificationPreset(id);
-        if (!notification) throw new Error(`Notification preset ${id} not found`);
+        if (!notification)
+          throw new Error(`Notification preset ${id} not found`);
         broadcastMsg = {
           scope: "plan",
           type: "notification:triggered",
@@ -200,7 +251,13 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       default:
-        sender.send(JSON.stringify({ scope: "plan", type: "error", message: `Unknown type: ${data.type}` }));
+        sender.send(
+          JSON.stringify({
+            scope: "plan",
+            type: "error",
+            message: `Unknown type: ${data.type}`,
+          }),
+        );
         return;
     }
 
@@ -222,10 +279,7 @@ const server = Bun.serve({
   hostname: "0.0.0.0",
   development: true,
   routes: {
-    "/": planPage,
-    "/plan": (req: Request) => {
-      return Response.redirect(new URL("/", req.url), 302);
-    },
+    "/": page,
     "/api/plan/state": () => {
       const current = getCurrentShowName();
       if (!current) {
@@ -235,13 +289,20 @@ const server = Bun.serve({
     },
     "/api/shows": async (req: Request) => {
       if (req.method === "GET") {
-        return Response.json({ shows: listShows(), currentShow: getCurrentShowName() });
+        return Response.json({
+          shows: listShows(),
+          currentShow: getCurrentShowName(),
+        });
       }
       if (req.method === "POST") {
         try {
           const body = await req.json();
           const name = String(body?.name ?? "").trim();
-          if (!name) return Response.json({ error: "Name is required" }, { status: 400 });
+          if (!name)
+            return Response.json(
+              { error: "Name is required" },
+              { status: 400 },
+            );
           createShow(name);
           return Response.json({ ok: true, name });
         } catch (err: any) {
@@ -257,7 +318,8 @@ const server = Bun.serve({
       try {
         const body = await req.json();
         const name = String(body?.name ?? "").trim();
-        if (!name) return Response.json({ error: "Name is required" }, { status: 400 });
+        if (!name)
+          return Response.json({ error: "Name is required" }, { status: 400 });
         selectShow(name);
         const state = getFullState();
         broadcastPlan({
