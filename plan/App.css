@@ -1238,6 +1238,316 @@ body {
 }
 
 /* ============================================
+   SHOW SELECTOR
+   ============================================ */
+
+.show-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.show-selector-header {
+  text-align: center;
+}
+
+.show-selector-header h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.show-selector-subtitle {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.show-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.show-selector-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--border);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.show-selector-item:hover {
+  background: var(--text-primary);
+  color: var(--bg-dark);
+  border-color: var(--text-primary);
+}
+
+.show-selector-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.show-selector-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.show-selector-delete:hover {
+  color: var(--danger-color);
+}
+
+.show-selector-item:hover .show-selector-delete {
+  color: var(--bg-dark);
+}
+
+.show-selector-item:hover .show-selector-delete:hover {
+  color: var(--danger-color);
+}
+
+.show-selector-new {
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: var(--add-color);
+  border: 3px solid var(--add-color);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  min-height: 44px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.show-selector-new:hover {
+  background: var(--add-color);
+  color: var(--bg-dark);
+}
+
+.show-selector-input-wrap {
+  width: 100%;
+  max-width: 500px;
+}
+
+.show-selector-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 3px solid var(--border);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  min-height: 44px;
+}
+
+.show-selector-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+.show-selector-input-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.show-selector-create-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: var(--add-color);
+  color: var(--bg-dark);
+  border: 3px solid var(--add-color);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.show-selector-cancel-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 3px solid var(--border);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.show-selector-cancel-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.show-selector-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/* ============================================
+   SHOW SWITCHER
+   ============================================ */
+
+.show-switcher-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.show-switcher-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.show-switcher-show {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.show-switcher-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--bg-dark);
+  border: 3px solid var(--text-primary);
+  z-index: 50;
+  min-width: 200px;
+}
+
+.show-switcher-item {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+}
+
+.show-switcher-item:hover {
+  background: var(--text-primary);
+  color: var(--bg-dark);
+}
+
+.show-switcher-item.active {
+  background: var(--text-primary);
+  color: var(--bg-dark);
+}
+
+.show-switcher-item.new {
+  color: var(--add-color);
+}
+
+.show-switcher-item.new:hover {
+  background: var(--add-color);
+  color: var(--bg-dark);
+}
+
+.show-switcher-item.new-input {
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.show-switcher-item.new-input input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: none;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  min-height: 44px;
+}
+
+.show-switcher-item.new-input input:focus {
+  outline: none;
+  background: var(--bg-card);
+}
+
+.show-switcher-create-btn {
+  padding: 0 0.75rem;
+  background: var(--add-color);
+  color: var(--bg-dark);
+  border: none;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.show-switcher-divider {
+  height: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 

@@ -37,6 +37,7 @@ type Action =
   | { type: "notificationPreset:updated"; data: NotificationPreset }
   | { type: "notificationPreset:deleted"; id: number }
   | { type: "notification:triggered"; eventId: string; timestamp: number; notification: NotificationPreset }
+  | { type: "show:changed"; show: string; state: any }
   | { type: "OPTIMISTIC_MIC"; data: Mic }
   | { type: "OPTIMISTIC_ELEMENT"; data: StageElement }
   | { type: "OPTIMISTIC_ZONE"; data: Zone }
@@ -62,6 +63,19 @@ const initialState: State = {
   status: "connecting",
 };
 
+function normalizeStatePayload(data: any) {
+  const d = data ?? {};
+  return {
+    mics: Array.isArray(d.mics) ? d.mics : [],
+    stageElements: Array.isArray(d.stageElements) ? d.stageElements : [],
+    zones: Array.isArray(d.zones) ? d.zones : [],
+    columns: Array.isArray(d.columns) ? d.columns : [],
+    songs: Array.isArray(d.songs) ? d.songs : [],
+    cells: Array.isArray(d.cells) ? d.cells : [],
+    notificationPresets: Array.isArray(d.notificationPresets) ? d.notificationPresets : [],
+  };
+}
+
 function reducer(state: State, action: Action): State {
   const plan = state.plan;
 
@@ -69,8 +83,9 @@ function reducer(state: State, action: Action): State {
     case "SET_STATUS":
       return { ...state, status: action.status };
 
-    case "SET_FULL_STATE": {
-      const d = action.data;
+    case "SET_FULL_STATE":
+    case "show:changed": {
+      const d = normalizeStatePayload(action.type === "show:changed" ? action.state : action.data);
       const mics = new Map<number | string, Mic>();
       for (const m of d.mics) mics.set(m.id, m);
       const elements = new Map<number | string, StageElement>();
@@ -88,7 +103,7 @@ function reducer(state: State, action: Action): State {
           columns: d.columns,
           songs: d.songs,
           cells,
-          notificationPresets: d.notificationPresets ?? [],
+          notificationPresets: d.notificationPresets,
           notificationEvent: null,
         },
       };
@@ -282,6 +297,10 @@ export function usePlanWebSocket() {
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch("/api/plan/state");
+      if (!res.ok) {
+        dispatch({ type: "SET_FULL_STATE", data: {} });
+        return;
+      }
       const data = await res.json();
       dispatch({ type: "SET_FULL_STATE", data });
     } catch (e) {
@@ -310,7 +329,10 @@ export function usePlanWebSocket() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.scope === "plan" && data.type !== "error") {
+        if (data.scope === "plan" && data.type === "show:changed") {
+          dispatch(data as Action);
+          window.dispatchEvent(new CustomEvent("show:changed", { detail: { show: data.show } }));
+        } else if (data.scope === "plan" && data.type !== "error") {
           dispatch(data as Action);
         } else if (data.scope === "plan" && data.type === "error") {
           console.error("Plan error:", data.message);

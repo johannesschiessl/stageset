@@ -80,6 +80,7 @@ export interface PlanContextType {
   state: PlanState;
   status: ConnectionStatus;
   send: (msg: any) => void;
+  currentShow: string | null;
 }
 
 export const ZONE_COLORS = [

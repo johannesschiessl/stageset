@@ -23,6 +23,11 @@ import {
   updateNotificationPreset,
   deleteNotificationPreset,
   getNotificationPreset,
+  listShows,
+  selectShow,
+  createShow,
+  deleteShow,
+  getCurrentShowName,
 } from "./db";
 
 const clients = new Set<any>();
@@ -222,7 +227,49 @@ const server = Bun.serve({
       return Response.redirect(new URL("/", req.url), 302);
     },
     "/api/plan/state": () => {
-      return Response.json(getFullState());
+      const current = getCurrentShowName();
+      if (!current) {
+        return Response.json({ error: "No show selected" }, { status: 400 });
+      }
+      return Response.json({ ...getFullState(), currentShow: current });
+    },
+    "/api/shows": async (req: Request) => {
+      if (req.method === "GET") {
+        return Response.json({ shows: listShows(), currentShow: getCurrentShowName() });
+      }
+      if (req.method === "POST") {
+        try {
+          const body = await req.json();
+          const name = String(body?.name ?? "").trim();
+          if (!name) return Response.json({ error: "Name is required" }, { status: 400 });
+          createShow(name);
+          return Response.json({ ok: true, name });
+        } catch (err: any) {
+          return Response.json({ error: err.message }, { status: 400 });
+        }
+      }
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
+    },
+    "/api/shows/select": async (req: Request) => {
+      if (req.method !== "POST") {
+        return Response.json({ error: "Method not allowed" }, { status: 405 });
+      }
+      try {
+        const body = await req.json();
+        const name = String(body?.name ?? "").trim();
+        if (!name) return Response.json({ error: "Name is required" }, { status: 400 });
+        selectShow(name);
+        const state = getFullState();
+        broadcastPlan({
+          scope: "plan",
+          type: "show:changed",
+          show: name,
+          state,
+        });
+        return Response.json({ ok: true, name });
+      } catch (err: any) {
+        return Response.json({ error: err.message }, { status: 400 });
+      }
     },
   },
   fetch(req, server) {
@@ -234,6 +281,17 @@ const server = Bun.serve({
         return undefined;
       }
       return new Response("WebSocket upgrade failed", { status: 400 });
+    }
+
+    // DELETE /api/shows/:name
+    if (url.pathname.startsWith("/api/shows/") && req.method === "DELETE") {
+      const name = decodeURIComponent(url.pathname.slice("/api/shows/".length));
+      try {
+        deleteShow(name);
+        return Response.json({ ok: true });
+      } catch (err: any) {
+        return Response.json({ error: err.message }, { status: 400 });
+      }
     }
 
     return new Response("Not Found", { status: 404 });

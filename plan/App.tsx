@@ -9,6 +9,8 @@ import { Setlist } from "./components/Setlist";
 import { LiveMode } from "./components/LiveMode";
 import { ConfigTab } from "./components/ConfigTab";
 import { NotificationOverlay } from "./components/NotificationOverlay";
+import { ShowSelector } from "./components/ShowSelector";
+import { ShowSwitcher } from "./components/ShowSwitcher";
 import "./App.css";
 
 export const PlanContext = createContext<PlanContextType>(null!);
@@ -19,6 +21,83 @@ function App() {
   const [activeTab, setActiveTab] = useState<"stage" | "setlist" | "config">("stage");
   const [liveMode, setLiveMode] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const [currentShow, setCurrentShow] = useState<string | null>(null);
+  const [shows, setShows] = useState<string[]>([]);
+  const [showsLoading, setShowsLoading] = useState(true);
+
+  // Fetch shows on mount
+  useEffect(() => {
+    fetch("/api/shows")
+      .then((res) => res.json())
+      .then((data) => {
+        setShows(data.shows);
+        setCurrentShow(data.currentShow);
+        setShowsLoading(false);
+      })
+      .catch(() => setShowsLoading(false));
+  }, []);
+
+  // Listen for show:changed messages via the WebSocket dispatch
+  // We tap into the ws.onmessage by watching the state for changes
+  // triggered by show:changed. We use a custom event approach.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setCurrentShow(detail.show);
+      // Refresh shows list
+      fetch("/api/shows")
+        .then((res) => res.json())
+        .then((data) => setShows(data.shows))
+        .catch(() => {});
+    };
+    window.addEventListener("show:changed", handler);
+    return () => window.removeEventListener("show:changed", handler);
+  }, []);
+
+  const handleSelectShow = useCallback(async (name: string) => {
+    try {
+      const res = await fetch("/api/shows/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        setCurrentShow(name);
+      }
+    } catch {}
+  }, []);
+
+  const handleCreateShow = useCallback(async (name: string) => {
+    try {
+      const res = await fetch("/api/shows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        setCurrentShow(name);
+        setShows((prev) => [...prev, name].sort());
+        // Select the show (which also loads its state)
+        await fetch("/api/shows/select", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+      }
+    } catch {}
+  }, []);
+
+  const handleDeleteShow = useCallback(async (name: string) => {
+    try {
+      const res = await fetch(`/api/shows/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setShows((prev) => prev.filter((s) => s !== name));
+      }
+    } catch {}
+  }, []);
 
   const openNotifications = useCallback(() => {
     setNotificationsOpen(true);
@@ -56,8 +135,21 @@ function App() {
     setNotificationsOpen(false);
   }, [liveMode, activeTab]);
 
+  // No show selected — show the selector
+  if (!currentShow) {
+    return (
+      <ShowSelector
+        shows={shows}
+        onSelect={handleSelectShow}
+        onCreate={handleCreateShow}
+        onDelete={handleDeleteShow}
+        loading={showsLoading}
+      />
+    );
+  }
+
   return (
-    <PlanContext.Provider value={{ state, status, send }}>
+    <PlanContext.Provider value={{ state, status, send, currentShow }}>
       {liveMode ? (
         <LiveMode
           onExit={() => setLiveMode(false)}
@@ -71,7 +163,12 @@ function App() {
         <>
           <ConnectionStatus status={status} />
           <div className="plan-header">
-            <h1>Stageset</h1>
+            <ShowSwitcher
+              currentShow={currentShow}
+              shows={shows}
+              onSwitch={handleSelectShow}
+              onCreate={handleCreateShow}
+            />
             <TabBar
               activeTab={activeTab}
               onTabChange={setActiveTab}
