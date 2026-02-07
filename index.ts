@@ -1,7 +1,130 @@
 import { notifications, type Notification } from "./config";
+import planPage from "./plan/plan.html";
+import {
+  getFullState,
+  createMic,
+  updateMic,
+  deleteMic,
+  createElement,
+  updateElement,
+  deleteElement,
+  createColumn,
+  updateColumn,
+  deleteColumn,
+  reorderColumns,
+  createSong,
+  updateSong,
+  deleteSong,
+  reorderSongs,
+  upsertCell,
+} from "./db";
 
 // Track connected WebSocket clients
 const clients = new Set<any>();
+
+function broadcastPlan(msg: any) {
+  const payload = JSON.stringify(msg);
+  for (const client of clients) {
+    client.send(payload);
+  }
+}
+
+function handlePlanMessage(data: any, sender: any) {
+  try {
+    let result: any;
+    let broadcastMsg: any;
+
+    switch (data.type) {
+      case "mic:create": {
+        result = createMic(data.data);
+        broadcastMsg = { scope: "plan", type: "mic:created", data: result, tempId: data.tempId };
+        break;
+      }
+      case "mic:update": {
+        result = updateMic(data.id, data.data);
+        broadcastMsg = { scope: "plan", type: "mic:updated", data: result };
+        break;
+      }
+      case "mic:delete": {
+        deleteMic(data.id);
+        broadcastMsg = { scope: "plan", type: "mic:deleted", id: data.id };
+        break;
+      }
+      case "element:create": {
+        result = createElement(data.data);
+        broadcastMsg = { scope: "plan", type: "element:created", data: result, tempId: data.tempId };
+        break;
+      }
+      case "element:update": {
+        result = updateElement(data.id, data.data);
+        broadcastMsg = { scope: "plan", type: "element:updated", data: result };
+        break;
+      }
+      case "element:delete": {
+        deleteElement(data.id);
+        broadcastMsg = { scope: "plan", type: "element:deleted", id: data.id };
+        break;
+      }
+      case "column:create": {
+        result = createColumn(data.data);
+        broadcastMsg = { scope: "plan", type: "column:created", data: result, tempId: data.tempId };
+        break;
+      }
+      case "column:update": {
+        result = updateColumn(data.id, data.data);
+        broadcastMsg = { scope: "plan", type: "column:updated", data: result };
+        break;
+      }
+      case "column:delete": {
+        deleteColumn(data.id);
+        broadcastMsg = { scope: "plan", type: "column:deleted", id: data.id };
+        break;
+      }
+      case "columns:reorder": {
+        reorderColumns(data.order);
+        broadcastMsg = { scope: "plan", type: "columns:reordered", order: data.order };
+        break;
+      }
+      case "song:create": {
+        result = createSong(data.data);
+        broadcastMsg = { scope: "plan", type: "song:created", data: result, tempId: data.tempId };
+        break;
+      }
+      case "song:update": {
+        result = updateSong(data.id, data.data);
+        broadcastMsg = { scope: "plan", type: "song:updated", data: result };
+        break;
+      }
+      case "song:delete": {
+        deleteSong(data.id);
+        broadcastMsg = { scope: "plan", type: "song:deleted", id: data.id };
+        break;
+      }
+      case "songs:reorder": {
+        reorderSongs(data.order);
+        broadcastMsg = { scope: "plan", type: "songs:reordered", order: data.order };
+        break;
+      }
+      case "cell:update": {
+        result = upsertCell(data.songId, data.columnId, data.value);
+        broadcastMsg = { scope: "plan", type: "cell:updated", data: result };
+        break;
+      }
+      default:
+        sender.send(JSON.stringify({ scope: "plan", type: "error", message: `Unknown type: ${data.type}` }));
+        return;
+    }
+
+    broadcastPlan(broadcastMsg);
+  } catch (err: any) {
+    sender.send(JSON.stringify({
+      scope: "plan",
+      type: "error",
+      tempId: data.tempId,
+      message: err.message ?? String(err),
+    }));
+  }
+}
 
 const server = Bun.serve({
   port: 3000,
@@ -14,8 +137,12 @@ const server = Bun.serve({
         headers: { "Content-Type": "text/html" },
       });
     },
+    "/plan": planPage,
     "/api/notifications": () => {
       return Response.json(notifications);
+    },
+    "/api/plan/state": () => {
+      return Response.json(getFullState());
     },
   },
   fetch(req, server) {
@@ -42,11 +169,10 @@ const server = Bun.serve({
         const data = JSON.parse(message.toString());
 
         if (data.type === "notification") {
-          // Find the notification config
+          // existing notification handling — unchanged
           const notification = notifications.find((n) => n.id === data.id);
 
           if (notification) {
-            // Broadcast to all connected clients
             const payload = JSON.stringify({
               type: "notification",
               notification,
@@ -58,6 +184,8 @@ const server = Bun.serve({
 
             console.log(`Broadcast notification: ${notification.label}`);
           }
+        } else if (data.scope === "plan") {
+          handlePlanMessage(data, ws);
         }
       } catch (err) {
         console.error("Failed to parse message:", err);
