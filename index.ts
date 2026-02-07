@@ -28,7 +28,7 @@ import {
   updateZone,
   upsertCell,
 } from "./db";
-import page from "./public/index.html";
+import indexPage from "./public/index.html";
 
 const clients = new Set<any>();
 
@@ -279,7 +279,8 @@ const server = Bun.serve({
   hostname: "0.0.0.0",
   development: true,
   routes: {
-    "/": page,
+    "/": indexPage,
+    "/notify": indexPage,
     "/api/plan/state": () => {
       const current = getCurrentShowName();
       if (!current) {
@@ -336,6 +337,10 @@ const server = Bun.serve({
   },
   fetch(req, server) {
     const url = new URL(req.url);
+
+    if (url.pathname === "/notify/") {
+      return Response.redirect(new URL("/notify", req.url), 308);
+    }
 
     if (url.pathname === "/ws") {
       const upgraded = server.upgrade(req);

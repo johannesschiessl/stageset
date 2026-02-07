@@ -8,6 +8,7 @@ import { StagePlan } from "./components/StagePlan";
 import { Setlist } from "./components/Setlist";
 import { LiveMode } from "./components/LiveMode";
 import { NotifyModal } from "./components/NotifyModal";
+import { NotificationPage } from "./components/NotificationPage";
 import { NotificationOverlay } from "./components/NotificationOverlay";
 import { ShowSelector } from "./components/ShowSelector";
 import { ShowSwitcher } from "./components/ShowSwitcher";
@@ -18,6 +19,7 @@ export const usePlan = () => useContext(PlanContext);
 
 function App() {
   const { state, status, send } = usePlanWebSocket();
+  const isNotificationPage = /^\/notify\/?$/.test(window.location.pathname);
   const [activeTab, setActiveTab] = useState<"stage" | "setlist">("stage");
   const [liveMode, setLiveMode] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -103,15 +105,23 @@ function App() {
     setNotificationsOpen((open) => !open);
   }, []);
 
-  const sendNotification = useCallback(
+  const triggerNotification = useCallback(
     (presetId: number) => {
       send({ type: "notification:trigger", id: presetId });
-      setNotificationsOpen(false);
     },
     [send],
   );
 
+  const sendNotification = useCallback(
+    (presetId: number) => {
+      triggerNotification(presetId);
+      setNotificationsOpen(false);
+    },
+    [triggerNotification],
+  );
+
   useEffect(() => {
+    if (isNotificationPage) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "n") {
         event.preventDefault();
@@ -121,7 +131,7 @@ function App() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleNotifications]);
+  }, [isNotificationPage, toggleNotifications]);
 
   useEffect(() => {
     setNotificationsOpen(false);
@@ -142,7 +152,14 @@ function App() {
 
   return (
     <PlanContext.Provider value={{ state, status, send, currentShow }}>
-      {liveMode ? (
+      {isNotificationPage ? (
+        <>
+          <ConnectionStatus status={status} />
+          <div className="notification-page">
+            <NotificationPage onSend={triggerNotification} />
+          </div>
+        </>
+      ) : liveMode ? (
         <LiveMode
           onExit={() => setLiveMode(false)}
           onToggleNotifications={toggleNotifications}
@@ -173,11 +190,13 @@ function App() {
         </>
       )}
 
-      <NotifyModal
-        open={notificationsOpen}
-        onClose={closeNotifications}
-        onSend={sendNotification}
-      />
+      {!isNotificationPage && (
+        <NotifyModal
+          open={notificationsOpen}
+          onClose={closeNotifications}
+          onSend={sendNotification}
+        />
+      )}
       <NotificationOverlay event={state.notificationEvent} />
     </PlanContext.Provider>
   );

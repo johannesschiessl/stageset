@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePlan } from "../App";
 import type { NotificationPreset } from "../types";
 import { NotificationPresetDialog } from "./NotificationPresetDialog";
@@ -20,7 +20,10 @@ export function NotifyModal({ open, onClose, onSend }: Props) {
   const [editing, setEditing] = useState(false);
 
   const presets = useMemo(
-    () => [...state.notificationPresets].sort((a, b) => a.sort_order - b.sort_order),
+    () =>
+      [...state.notificationPresets].sort(
+        (a, b) => a.sort_order - b.sort_order,
+      ),
     [state.notificationPresets],
   );
 
@@ -62,6 +65,13 @@ export function NotifyModal({ open, onClose, onSend }: Props) {
           <div className="notify-modal-header">
             <h2>Notifications</h2>
             <div className="notify-modal-header-actions">
+              <a
+                className="notify-open-page-link"
+                href="/notify"
+                onClick={() => onClose()}
+              >
+                Page
+              </a>
               <button
                 className={`notify-edit-toggle ${editing ? "active" : ""}`}
                 onClick={() => setEditing((v) => !v)}
@@ -113,7 +123,10 @@ export function NotifyModal({ open, onClose, onSend }: Props) {
                       className="notify-card-btn notify-card-delete"
                       title="Delete"
                       onClick={() =>
-                        send({ type: "notificationPreset:delete", id: preset.id })
+                        send({
+                          type: "notificationPreset:delete",
+                          id: preset.id,
+                        })
                       }
                     >
                       {"\u2715"}

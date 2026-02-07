@@ -1095,6 +1095,14 @@ body {
   z-index: 90;
 }
 
+.notification-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  padding: 0;
+}
+
 .notify-modal {
   background: var(--bg-dark);
   border: 3px solid var(--notify-color);
@@ -1103,6 +1111,51 @@ body {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+}
+
+.notification-page-modal {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.notification-page-modal .notify-grid {
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-content: start;
+}
+
+.notification-page-modal .notify-card {
+  width: 100%;
+  min-height: 180px;
+  justify-self: stretch;
+}
+
+.notification-page-modal .notify-card-trigger {
+  padding: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .notification-page-modal .notify-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .notification-page-modal .notify-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .notification-page-modal .notify-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .notify-modal-header {
@@ -1125,6 +1178,28 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.notify-open-page-link {
+  background: transparent;
+  border: 3px solid var(--notify-color);
+  color: var(--notify-color);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 0.3rem 0.75rem;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.notify-open-page-link:hover {
+  background: var(--notify-color);
+  color: #000;
 }
 
 .notify-edit-toggle {
@@ -1174,6 +1249,10 @@ body {
 .notify-modal-close:hover {
   border-color: var(--text-primary);
   color: var(--text-primary);
+}
+
+.notify-modal-close-link {
+  text-decoration: none;
 }
 
 .notify-grid {
