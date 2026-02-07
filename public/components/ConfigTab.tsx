@@ -21,8 +21,9 @@ export function ConfigTab() {
 
   return (
     <div className="setlist config-list-view">
+      <h2 className="config-section-heading">Notifications</h2>
       <div className="setlist-header-actions">
-        <button className="add-col-btn" onClick={() => setDialog({ type: "add" })}>
+        <button className="add-row-btn" onClick={() => setDialog({ type: "add" })}>
           + Notification
         </button>
       </div>

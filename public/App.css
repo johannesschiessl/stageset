@@ -1087,6 +1087,20 @@ body {
    CONFIG TAB
    ============================================ */
 
+.config-section-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  padding: 0 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.config-list-view .add-row-btn {
+  margin-top: 0;
+}
+
 .config-preset-cell {
   display: flex;
   align-items: center;
@@ -1096,6 +1110,9 @@ body {
 .config-preset-emoji {
   font-size: 1.35rem;
   line-height: 1;
+  width: 1.6rem;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .config-preset-label {
@@ -1148,16 +1165,16 @@ body {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 1rem;
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   text-align: left;
   cursor: pointer;
   min-height: 44px;
@@ -1176,6 +1193,9 @@ body {
 .notify-popover-item-emoji {
   font-size: 1.4rem;
   line-height: 1;
+  width: 1.6rem;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .notify-popover-empty {
