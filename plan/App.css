@@ -434,11 +434,11 @@ body {
 }
 
 .mic-selector-dropdown {
-  position: absolute;
+  position: fixed;
   background: var(--bg-dark);
   border: 3px solid var(--text-primary);
   padding: 0.5rem;
-  z-index: 50;
+  z-index: 9999;
   max-height: 250px;
   overflow-y: auto;
   min-width: 200px;
