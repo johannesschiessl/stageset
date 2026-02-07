@@ -66,6 +66,14 @@ db.run(`CREATE TABLE IF NOT EXISTS cells (
   UNIQUE(song_id, column_id)
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS notification_presets (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  label      TEXT NOT NULL,
+  emoji      TEXT NOT NULL,
+  color      TEXT NOT NULL DEFAULT '#6B9FFF',
+  sort_order INTEGER NOT NULL DEFAULT 0
+)`);
+
 // Migration: add width/height to stage_elements if missing
 try {
   db.run("ALTER TABLE stage_elements ADD COLUMN width REAL NOT NULL DEFAULT 0");
@@ -91,6 +99,7 @@ const stmts = {
   allColumns: db.prepare("SELECT * FROM columns ORDER BY sort_order, id"),
   allSongs: db.prepare("SELECT * FROM songs ORDER BY sort_order, id"),
   allCells: db.prepare("SELECT * FROM cells"),
+  allNotificationPresets: db.prepare("SELECT * FROM notification_presets ORDER BY sort_order, id"),
 
   insertMic: db.prepare("INSERT INTO mics (number, name, x, y) VALUES ($number, $name, $x, $y)"),
   updateMic: db.prepare("UPDATE mics SET number = $number, name = $name, x = $x, y = $y WHERE id = $id"),
@@ -115,6 +124,11 @@ const stmts = {
   updateSongOrder: db.prepare("UPDATE songs SET sort_order = $sort_order WHERE id = $id"),
   maxSongOrder: db.prepare("SELECT COALESCE(MAX(sort_order), -1) as max_order FROM songs"),
   maxColumnOrder: db.prepare("SELECT COALESCE(MAX(sort_order), -1) as max_order FROM columns"),
+  maxNotificationPresetOrder: db.prepare("SELECT COALESCE(MAX(sort_order), -1) as max_order FROM notification_presets"),
+  getNotificationPresetById: db.prepare("SELECT * FROM notification_presets WHERE id = ?"),
+  insertNotificationPreset: db.prepare("INSERT INTO notification_presets (label, emoji, color, sort_order) VALUES ($label, $emoji, $color, $sort_order)"),
+  updateNotificationPreset: db.prepare("UPDATE notification_presets SET label = $label, emoji = $emoji, color = $color WHERE id = $id"),
+  deleteNotificationPreset: db.prepare("DELETE FROM notification_presets WHERE id = $id"),
 
   upsertCell: db.prepare(`INSERT INTO cells (song_id, column_id, value) VALUES ($song_id, $column_id, $value)
     ON CONFLICT(song_id, column_id) DO UPDATE SET value = $value`),
@@ -128,6 +142,7 @@ export function getFullState() {
     columns: stmts.allColumns.all(),
     songs: stmts.allSongs.all(),
     cells: stmts.allCells.all(),
+    notificationPresets: stmts.allNotificationPresets.all(),
   };
 }
 
@@ -331,4 +346,59 @@ export function reorderSongs(ids: number[]) {
 export function upsertCell(songId: number, columnId: number, value: string) {
   stmts.upsertCell.run({ $song_id: songId, $column_id: columnId, $value: value });
   return { song_id: songId, column_id: columnId, value };
+}
+
+export interface NotificationPreset {
+  id: number;
+  label: string;
+  emoji: string;
+  color: string;
+  sort_order: number;
+}
+
+export function createNotificationPreset(data: { label: string; emoji: string; color: string }): NotificationPreset {
+  const maxOrder = stmts.maxNotificationPresetOrder.get() as { max_order: number };
+  const sortOrder = maxOrder.max_order + 1;
+  const result = stmts.insertNotificationPreset.run({
+    $label: data.label,
+    $emoji: data.emoji,
+    $color: data.color,
+    $sort_order: sortOrder,
+  });
+  return {
+    id: Number(result.lastInsertRowid),
+    label: data.label,
+    emoji: data.emoji,
+    color: data.color,
+    sort_order: sortOrder,
+  };
+}
+
+export function updateNotificationPreset(
+  id: number,
+  data: { label?: string; emoji?: string; color?: string },
+): NotificationPreset {
+  const existing = stmts.getNotificationPresetById.get(id) as NotificationPreset | undefined;
+  if (!existing) throw new Error(`Notification preset ${id} not found`);
+  const updated = {
+    label: data.label ?? existing.label,
+    emoji: data.emoji ?? existing.emoji,
+    color: data.color ?? existing.color,
+  };
+  stmts.updateNotificationPreset.run({
+    $id: id,
+    $label: updated.label,
+    $emoji: updated.emoji,
+    $color: updated.color,
+  });
+  return { ...existing, ...updated };
+}
+
+export function deleteNotificationPreset(id: number) {
+  const result = stmts.deleteNotificationPreset.run({ $id: id });
+  if (result.changes === 0) throw new Error(`Notification preset ${id} not found`);
+}
+
+export function getNotificationPreset(id: number): NotificationPreset | null {
+  return (stmts.getNotificationPresetById.get(id) as NotificationPreset | null) ?? null;
 }

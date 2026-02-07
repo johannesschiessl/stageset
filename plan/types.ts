@@ -49,6 +49,20 @@ export interface Cell {
   value: string;
 }
 
+export interface NotificationPreset {
+  id: number;
+  label: string;
+  emoji: string;
+  color: string;
+  sort_order: number;
+}
+
+export interface NotificationEvent {
+  eventId: string;
+  timestamp: number;
+  notification: NotificationPreset;
+}
+
 export interface PlanState {
   mics: Map<number | string, Mic>;
   elements: Map<number | string, StageElement>;
@@ -56,6 +70,8 @@ export interface PlanState {
   columns: Column[];
   songs: Song[];
   cells: Map<string, Cell>;
+  notificationPresets: NotificationPreset[];
+  notificationEvent: NotificationEvent | null;
 }
 
 export type ConnectionStatus = "connected" | "connecting" | "disconnected";
@@ -67,6 +83,17 @@ export interface PlanContextType {
 }
 
 export const ZONE_COLORS = [
+  { label: "Red", value: "#FF6B6B" },
+  { label: "Blue", value: "#6B9FFF" },
+  { label: "Green", value: "#6BCB77" },
+  { label: "Yellow", value: "#FFE66D" },
+  { label: "Purple", value: "#A78BFA" },
+  { label: "Cyan", value: "#4ECDC4" },
+  { label: "Orange", value: "#FF9F43" },
+  { label: "Pink", value: "#FF6B9D" },
+];
+
+export const NOTIFICATION_COLORS = [
   { label: "Red", value: "#FF6B6B" },
   { label: "Blue", value: "#6B9FFF" },
   { label: "Green", value: "#6BCB77" },

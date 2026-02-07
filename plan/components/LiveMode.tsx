@@ -1,12 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { usePlan } from "../App";
 import type { Mic, Column, Song } from "../types";
+import type { NotificationPreset } from "../types";
+import { NotificationPopover } from "./NotificationPopover";
 
 interface Props {
   onExit: () => void;
+  onToggleNotifications: () => void;
+  onCloseNotifications: () => void;
+  onSendNotification: (presetId: number) => void;
+  notificationPresets: NotificationPreset[];
+  notificationsOpen: boolean;
 }
 
-export function LiveMode({ onExit }: Props) {
+export function LiveMode({
+  onExit,
+  onToggleNotifications,
+  onCloseNotifications,
+  onSendNotification,
+  notificationPresets,
+  notificationsOpen,
+}: Props) {
   const { state } = usePlan();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -25,6 +39,16 @@ export function LiveMode({ onExit }: Props) {
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        onToggleNotifications();
+        return;
+      }
+
+      if (notificationsOpen) {
+        return;
+      }
+
       if (e.key === "Escape") {
         onExit();
         return;
@@ -47,7 +71,7 @@ export function LiveMode({ onExit }: Props) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev, onExit]);
+  }, [goNext, goPrev, notificationsOpen, onExit, onToggleNotifications]);
 
   // Keep index in bounds when songs change
   useEffect(() => {
@@ -82,6 +106,17 @@ export function LiveMode({ onExit }: Props) {
         <div className="live-topbar">
           <button className="live-exit-btn" onClick={onExit}>EXIT LIVE</button>
           <div className="live-counter">NO SONGS</div>
+          <div className="toolbar-popover-wrap">
+            <button className={`live-notify-btn ${notificationsOpen ? "active" : ""}`} onClick={onToggleNotifications}>
+              Notify
+            </button>
+            <NotificationPopover
+              open={notificationsOpen}
+              presets={notificationPresets}
+              onClose={onCloseNotifications}
+              onSend={onSendNotification}
+            />
+          </div>
         </div>
         <div className="live-empty">No songs in setlist</div>
       </div>
@@ -108,6 +143,17 @@ export function LiveMode({ onExit }: Props) {
           <div
             className="live-progress-fill"
             style={{ width: `${((currentIndex + 1) / totalSongs) * 100}%` }}
+          />
+        </div>
+        <div className="toolbar-popover-wrap">
+          <button className={`live-notify-btn ${notificationsOpen ? "active" : ""}`} onClick={onToggleNotifications}>
+            Notify
+          </button>
+          <NotificationPopover
+            open={notificationsOpen}
+            presets={notificationPresets}
+            onClose={onCloseNotifications}
+            onSend={onSendNotification}
           />
         </div>
       </div>

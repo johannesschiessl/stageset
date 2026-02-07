@@ -1,4 +1,3 @@
-import { notifications, type Notification } from "./config";
 import planPage from "./plan/plan.html";
 import {
   getFullState,
@@ -20,9 +19,12 @@ import {
   deleteSong,
   reorderSongs,
   upsertCell,
+  createNotificationPreset,
+  updateNotificationPreset,
+  deleteNotificationPreset,
+  getNotificationPreset,
 } from "./db";
 
-// Track connected WebSocket clients
 const clients = new Set<any>();
 
 function broadcastPlan(msg: any) {
@@ -30,6 +32,33 @@ function broadcastPlan(msg: any) {
   for (const client of clients) {
     client.send(payload);
   }
+}
+
+function asInt(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid ${field}`);
+  }
+  return parsed;
+}
+
+function validateColor(value: string): string {
+  const color = value.trim();
+  if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+    throw new Error("Color must be a hex value like #12ABEF");
+  }
+  return color;
+}
+
+function parseNotificationPresetInput(data: any) {
+  const label = String(data?.label ?? "").trim();
+  const emoji = String(data?.emoji ?? "").trim();
+  const color = validateColor(String(data?.color ?? "#6B9FFF"));
+
+  if (!label) throw new Error("Label is required");
+  if (!emoji) throw new Error("Emoji is required");
+
+  return { label, emoji, color };
 }
 
 function handlePlanMessage(data: any, sender: any) {
@@ -44,13 +73,14 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "mic:update": {
-        result = updateMic(data.id, data.data);
+        result = updateMic(asInt(data.id, "mic id"), data.data);
         broadcastMsg = { scope: "plan", type: "mic:updated", data: result };
         break;
       }
       case "mic:delete": {
-        deleteMic(data.id);
-        broadcastMsg = { scope: "plan", type: "mic:deleted", id: data.id };
+        const id = asInt(data.id, "mic id");
+        deleteMic(id);
+        broadcastMsg = { scope: "plan", type: "mic:deleted", id };
         break;
       }
       case "element:create": {
@@ -59,13 +89,14 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "element:update": {
-        result = updateElement(data.id, data.data);
+        result = updateElement(asInt(data.id, "element id"), data.data);
         broadcastMsg = { scope: "plan", type: "element:updated", data: result };
         break;
       }
       case "element:delete": {
-        deleteElement(data.id);
-        broadcastMsg = { scope: "plan", type: "element:deleted", id: data.id };
+        const id = asInt(data.id, "element id");
+        deleteElement(id);
+        broadcastMsg = { scope: "plan", type: "element:deleted", id };
         break;
       }
       case "column:create": {
@@ -74,13 +105,14 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "column:update": {
-        result = updateColumn(data.id, data.data);
+        result = updateColumn(asInt(data.id, "column id"), data.data);
         broadcastMsg = { scope: "plan", type: "column:updated", data: result };
         break;
       }
       case "column:delete": {
-        deleteColumn(data.id);
-        broadcastMsg = { scope: "plan", type: "column:deleted", id: data.id };
+        const id = asInt(data.id, "column id");
+        deleteColumn(id);
+        broadcastMsg = { scope: "plan", type: "column:deleted", id };
         break;
       }
       case "columns:reorder": {
@@ -94,13 +126,14 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "song:update": {
-        result = updateSong(data.id, data.data);
+        result = updateSong(asInt(data.id, "song id"), data.data);
         broadcastMsg = { scope: "plan", type: "song:updated", data: result };
         break;
       }
       case "song:delete": {
-        deleteSong(data.id);
-        broadcastMsg = { scope: "plan", type: "song:deleted", id: data.id };
+        const id = asInt(data.id, "song id");
+        deleteSong(id);
+        broadcastMsg = { scope: "plan", type: "song:deleted", id };
         break;
       }
       case "songs:reorder": {
@@ -114,18 +147,51 @@ function handlePlanMessage(data: any, sender: any) {
         break;
       }
       case "zone:update": {
-        result = updateZone(data.id, data.data);
+        result = updateZone(asInt(data.id, "zone id"), data.data);
         broadcastMsg = { scope: "plan", type: "zone:updated", data: result };
         break;
       }
       case "zone:delete": {
-        deleteZone(data.id);
-        broadcastMsg = { scope: "plan", type: "zone:deleted", id: data.id };
+        const id = asInt(data.id, "zone id");
+        deleteZone(id);
+        broadcastMsg = { scope: "plan", type: "zone:deleted", id };
         break;
       }
       case "cell:update": {
-        result = upsertCell(data.songId, data.columnId, data.value);
+        const songId = asInt(data.songId, "song id");
+        const columnId = asInt(data.columnId, "column id");
+        result = upsertCell(songId, columnId, String(data.value ?? ""));
         broadcastMsg = { scope: "plan", type: "cell:updated", data: result };
+        break;
+      }
+      case "notificationPreset:create": {
+        result = createNotificationPreset(parseNotificationPresetInput(data.data));
+        broadcastMsg = { scope: "plan", type: "notificationPreset:created", data: result };
+        break;
+      }
+      case "notificationPreset:update": {
+        const id = asInt(data.id, "notification preset id");
+        result = updateNotificationPreset(id, parseNotificationPresetInput(data.data));
+        broadcastMsg = { scope: "plan", type: "notificationPreset:updated", data: result };
+        break;
+      }
+      case "notificationPreset:delete": {
+        const id = asInt(data.id, "notification preset id");
+        deleteNotificationPreset(id);
+        broadcastMsg = { scope: "plan", type: "notificationPreset:deleted", id };
+        break;
+      }
+      case "notification:trigger": {
+        const id = asInt(data.id, "notification preset id");
+        const notification = getNotificationPreset(id);
+        if (!notification) throw new Error(`Notification preset ${id} not found`);
+        broadcastMsg = {
+          scope: "plan",
+          type: "notification:triggered",
+          eventId: crypto.randomUUID(),
+          timestamp: Date.now(),
+          notification,
+        };
         break;
       }
       default:
@@ -135,29 +201,25 @@ function handlePlanMessage(data: any, sender: any) {
 
     broadcastPlan(broadcastMsg);
   } catch (err: any) {
-    sender.send(JSON.stringify({
-      scope: "plan",
-      type: "error",
-      tempId: data.tempId,
-      message: err.message ?? String(err),
-    }));
+    sender.send(
+      JSON.stringify({
+        scope: "plan",
+        type: "error",
+        tempId: data.tempId,
+        message: err.message ?? String(err),
+      }),
+    );
   }
 }
 
 const server = Bun.serve({
   port: 3000,
-  hostname: "0.0.0.0", // Listen on all interfaces for local network access
+  hostname: "0.0.0.0",
   development: true,
   routes: {
-    "/": async () => {
-      const file = Bun.file("./public/index.html");
-      return new Response(file, {
-        headers: { "Content-Type": "text/html" },
-      });
-    },
-    "/plan": planPage,
-    "/api/notifications": () => {
-      return Response.json(notifications);
+    "/": planPage,
+    "/plan": (req: Request) => {
+      return Response.redirect(new URL("/", req.url), 302);
     },
     "/api/plan/state": () => {
       return Response.json(getFullState());
@@ -166,7 +228,6 @@ const server = Bun.serve({
   fetch(req, server) {
     const url = new URL(req.url);
 
-    // Handle WebSocket upgrade
     if (url.pathname === "/ws") {
       const upgraded = server.upgrade(req);
       if (upgraded) {
@@ -185,24 +246,7 @@ const server = Bun.serve({
     message(ws, message) {
       try {
         const data = JSON.parse(message.toString());
-
-        if (data.type === "notification") {
-          // existing notification handling — unchanged
-          const notification = notifications.find((n) => n.id === data.id);
-
-          if (notification) {
-            const payload = JSON.stringify({
-              type: "notification",
-              notification,
-            });
-
-            for (const client of clients) {
-              client.send(payload);
-            }
-
-            console.log(`Broadcast notification: ${notification.label}`);
-          }
-        } else if (data.scope === "plan") {
+        if (data.scope === "plan") {
           handlePlanMessage(data, ws);
         }
       } catch (err) {

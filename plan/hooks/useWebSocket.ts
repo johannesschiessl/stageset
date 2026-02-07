@@ -1,5 +1,16 @@
 import { useReducer, useRef, useCallback, useEffect } from "react";
-import type { PlanState, Mic, StageElement, Zone, Column, Song, Cell, ConnectionStatus } from "../types";
+import type {
+  PlanState,
+  Mic,
+  StageElement,
+  Zone,
+  Column,
+  Song,
+  Cell,
+  ConnectionStatus,
+  NotificationPreset,
+  NotificationEvent,
+} from "../types";
 
 type Action =
   | { type: "SET_FULL_STATE"; data: any }
@@ -22,6 +33,10 @@ type Action =
   | { type: "song:deleted"; id: number }
   | { type: "songs:reordered"; order: number[] }
   | { type: "cell:updated"; data: Cell }
+  | { type: "notificationPreset:created"; data: NotificationPreset }
+  | { type: "notificationPreset:updated"; data: NotificationPreset }
+  | { type: "notificationPreset:deleted"; id: number }
+  | { type: "notification:triggered"; eventId: string; timestamp: number; notification: NotificationPreset }
   | { type: "OPTIMISTIC_MIC"; data: Mic }
   | { type: "OPTIMISTIC_ELEMENT"; data: StageElement }
   | { type: "OPTIMISTIC_ZONE"; data: Zone }
@@ -41,6 +56,8 @@ const initialState: State = {
     columns: [],
     songs: [],
     cells: new Map(),
+    notificationPresets: [],
+    notificationEvent: null,
   },
   status: "connecting",
 };
@@ -71,6 +88,8 @@ function reducer(state: State, action: Action): State {
           columns: d.columns,
           songs: d.songs,
           cells,
+          notificationPresets: d.notificationPresets ?? [],
+          notificationEvent: null,
         },
       };
     }
@@ -212,6 +231,32 @@ function reducer(state: State, action: Action): State {
       const key = `${action.data.song_id}:${action.data.column_id}`;
       cells.set(key, action.data);
       return { ...state, plan: { ...plan, cells } };
+    }
+
+    case "notificationPreset:created": {
+      const notificationPresets = [...plan.notificationPresets, action.data].sort((a, b) => a.sort_order - b.sort_order);
+      return { ...state, plan: { ...plan, notificationPresets } };
+    }
+
+    case "notificationPreset:updated": {
+      const notificationPresets = plan.notificationPresets
+        .map((preset) => (preset.id === action.data.id ? action.data : preset))
+        .sort((a, b) => a.sort_order - b.sort_order);
+      return { ...state, plan: { ...plan, notificationPresets } };
+    }
+
+    case "notificationPreset:deleted": {
+      const notificationPresets = plan.notificationPresets.filter((preset) => preset.id !== action.id);
+      return { ...state, plan: { ...plan, notificationPresets } };
+    }
+
+    case "notification:triggered": {
+      const notificationEvent: NotificationEvent = {
+        eventId: action.eventId,
+        timestamp: action.timestamp,
+        notification: action.notification,
+      };
+      return { ...state, plan: { ...plan, notificationEvent } };
     }
 
     default:
