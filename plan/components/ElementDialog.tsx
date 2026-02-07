@@ -12,8 +12,9 @@ interface Props {
 const KIND_LABELS: Record<string, string> = {
   speaker: "Speaker",
   monitor: "Monitor",
-  di_box: "DI Box",
-  custom: "Custom",
+  stagebox: "Stagebox",
+  mixer: "Mixer",
+  object: "Object",
 };
 
 export function ElementDialog({ element, defaultKind, onSave, onDelete, onClose }: Props) {
@@ -37,8 +38,9 @@ export function ElementDialog({ element, defaultKind, onSave, onDelete, onClose 
               <select value={kind} onChange={e => setKind(e.target.value)}>
                 <option value="speaker">Speaker</option>
                 <option value="monitor">Monitor</option>
-                <option value="di_box">DI Box</option>
-                <option value="custom">Custom</option>
+                <option value="stagebox">Stagebox</option>
+                <option value="mixer">Mixer</option>
+                <option value="object">Object</option>
               </select>
             </div>
           )}
@@ -48,7 +50,7 @@ export function ElementDialog({ element, defaultKind, onSave, onDelete, onClose 
               type="text"
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder="e.g. Main L"
+              placeholder={kind === "object" ? "e.g. Drum Riser" : "e.g. Main L"}
               autoFocus
             />
           </div>

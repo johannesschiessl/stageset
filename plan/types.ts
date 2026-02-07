@@ -8,11 +8,23 @@ export interface Mic {
 
 export interface StageElement {
   id: number | string;
-  kind: "speaker" | "monitor" | "di_box" | "custom";
+  kind: "speaker" | "monitor" | "stagebox" | "mixer" | "object";
   label: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
   rotation: number;
+}
+
+export interface Zone {
+  id: number | string;
+  name: string;
+  color: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface Column {
@@ -40,6 +52,7 @@ export interface Cell {
 export interface PlanState {
   mics: Map<number | string, Mic>;
   elements: Map<number | string, StageElement>;
+  zones: Map<number | string, Zone>;
   columns: Column[];
   songs: Song[];
   cells: Map<string, Cell>;
@@ -52,6 +65,17 @@ export interface PlanContextType {
   status: ConnectionStatus;
   send: (msg: any) => void;
 }
+
+export const ZONE_COLORS = [
+  { label: "Red", value: "#FF6B6B" },
+  { label: "Blue", value: "#6B9FFF" },
+  { label: "Green", value: "#6BCB77" },
+  { label: "Yellow", value: "#FFE66D" },
+  { label: "Purple", value: "#A78BFA" },
+  { label: "Cyan", value: "#4ECDC4" },
+  { label: "Orange", value: "#FF9F43" },
+  { label: "Pink", value: "#FF6B9D" },
+];
 
 export function generateId(): string {
   const bytes = new Uint8Array(16);

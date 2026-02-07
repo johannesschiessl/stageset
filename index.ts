@@ -8,6 +8,9 @@ import {
   createElement,
   updateElement,
   deleteElement,
+  createZone,
+  updateZone,
+  deleteZone,
   createColumn,
   updateColumn,
   deleteColumn,
@@ -103,6 +106,21 @@ function handlePlanMessage(data: any, sender: any) {
       case "songs:reorder": {
         reorderSongs(data.order);
         broadcastMsg = { scope: "plan", type: "songs:reordered", order: data.order };
+        break;
+      }
+      case "zone:create": {
+        result = createZone(data.data);
+        broadcastMsg = { scope: "plan", type: "zone:created", data: result, tempId: data.tempId };
+        break;
+      }
+      case "zone:update": {
+        result = updateZone(data.id, data.data);
+        broadcastMsg = { scope: "plan", type: "zone:updated", data: result };
+        break;
+      }
+      case "zone:delete": {
+        deleteZone(data.id);
+        broadcastMsg = { scope: "plan", type: "zone:deleted", id: data.id };
         break;
       }
       case "cell:update": {

@@ -27,7 +27,19 @@ db.run(`CREATE TABLE IF NOT EXISTS stage_elements (
   label    TEXT NOT NULL DEFAULT '',
   x        REAL NOT NULL DEFAULT 400,
   y        REAL NOT NULL DEFAULT 300,
+  width    REAL NOT NULL DEFAULT 0,
+  height   REAL NOT NULL DEFAULT 0,
   rotation REAL NOT NULL DEFAULT 0
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS zones (
+  id     INTEGER PRIMARY KEY AUTOINCREMENT,
+  name   TEXT NOT NULL DEFAULT '',
+  color  TEXT NOT NULL DEFAULT '#6B9FFF',
+  x      REAL NOT NULL DEFAULT 200,
+  y      REAL NOT NULL DEFAULT 200,
+  width  REAL NOT NULL DEFAULT 200,
+  height REAL NOT NULL DEFAULT 150
 )`);
 
 db.run(`CREATE TABLE IF NOT EXISTS columns (
@@ -54,6 +66,14 @@ db.run(`CREATE TABLE IF NOT EXISTS cells (
   UNIQUE(song_id, column_id)
 )`);
 
+// Migration: add width/height to stage_elements if missing
+try {
+  db.run("ALTER TABLE stage_elements ADD COLUMN width REAL NOT NULL DEFAULT 0");
+} catch {}
+try {
+  db.run("ALTER TABLE stage_elements ADD COLUMN height REAL NOT NULL DEFAULT 0");
+} catch {}
+
 // Seed default columns if empty
 const columnCount = db.query("SELECT COUNT(*) as count FROM columns").get() as { count: number };
 if (columnCount.count === 0) {
@@ -67,6 +87,7 @@ if (columnCount.count === 0) {
 const stmts = {
   allMics: db.prepare("SELECT * FROM mics ORDER BY number"),
   allElements: db.prepare("SELECT * FROM stage_elements ORDER BY id"),
+  allZones: db.prepare("SELECT * FROM zones ORDER BY id"),
   allColumns: db.prepare("SELECT * FROM columns ORDER BY sort_order, id"),
   allSongs: db.prepare("SELECT * FROM songs ORDER BY sort_order, id"),
   allCells: db.prepare("SELECT * FROM cells"),
@@ -75,9 +96,13 @@ const stmts = {
   updateMic: db.prepare("UPDATE mics SET number = $number, name = $name, x = $x, y = $y WHERE id = $id"),
   deleteMic: db.prepare("DELETE FROM mics WHERE id = $id"),
 
-  insertElement: db.prepare("INSERT INTO stage_elements (kind, label, x, y, rotation) VALUES ($kind, $label, $x, $y, $rotation)"),
-  updateElement: db.prepare("UPDATE stage_elements SET kind = $kind, label = $label, x = $x, y = $y, rotation = $rotation WHERE id = $id"),
+  insertElement: db.prepare("INSERT INTO stage_elements (kind, label, x, y, width, height, rotation) VALUES ($kind, $label, $x, $y, $width, $height, $rotation)"),
+  updateElement: db.prepare("UPDATE stage_elements SET kind = $kind, label = $label, x = $x, y = $y, width = $width, height = $height, rotation = $rotation WHERE id = $id"),
   deleteElement: db.prepare("DELETE FROM stage_elements WHERE id = $id"),
+
+  insertZone: db.prepare("INSERT INTO zones (name, color, x, y, width, height) VALUES ($name, $color, $x, $y, $width, $height)"),
+  updateZone: db.prepare("UPDATE zones SET name = $name, color = $color, x = $x, y = $y, width = $width, height = $height WHERE id = $id"),
+  deleteZone: db.prepare("DELETE FROM zones WHERE id = $id"),
 
   insertColumn: db.prepare("INSERT INTO columns (key, label, type, sort_order, is_default) VALUES ($key, $label, $type, $sort_order, 0)"),
   updateColumn: db.prepare("UPDATE columns SET label = $label, type = $type WHERE id = $id"),
@@ -99,6 +124,7 @@ export function getFullState() {
   return {
     mics: stmts.allMics.all(),
     stageElements: stmts.allElements.all(),
+    zones: stmts.allZones.all(),
     columns: stmts.allColumns.all(),
     songs: stmts.allSongs.all(),
     cells: stmts.allCells.all(),
@@ -132,18 +158,29 @@ export function deleteMic(id: number) {
   stmts.deleteMic.run({ $id: id });
 }
 
-export function createElement(data: { kind: string; label?: string; x?: number; y?: number; rotation?: number }) {
+export function createElement(data: { kind: string; label?: string; x?: number; y?: number; width?: number; height?: number; rotation?: number }) {
   const result = stmts.insertElement.run({
     $kind: data.kind,
     $label: data.label ?? "",
     $x: data.x ?? 400,
     $y: data.y ?? 300,
+    $width: data.width ?? (data.kind === "object" ? 200 : 0),
+    $height: data.height ?? (data.kind === "object" ? 120 : 0),
     $rotation: data.rotation ?? 0,
   });
-  return { id: result.lastInsertRowid, kind: data.kind, label: data.label ?? "", x: data.x ?? 400, y: data.y ?? 300, rotation: data.rotation ?? 0 };
+  return {
+    id: result.lastInsertRowid,
+    kind: data.kind,
+    label: data.label ?? "",
+    x: data.x ?? 400,
+    y: data.y ?? 300,
+    width: data.width ?? (data.kind === "object" ? 200 : 0),
+    height: data.height ?? (data.kind === "object" ? 120 : 0),
+    rotation: data.rotation ?? 0,
+  };
 }
 
-export function updateElement(id: number, data: { kind?: string; label?: string; x?: number; y?: number; rotation?: number }) {
+export function updateElement(id: number, data: { kind?: string; label?: string; x?: number; y?: number; width?: number; height?: number; rotation?: number }) {
   const existing = db.prepare("SELECT * FROM stage_elements WHERE id = ?").get(id) as any;
   if (!existing) throw new Error(`Element ${id} not found`);
   stmts.updateElement.run({
@@ -152,13 +189,71 @@ export function updateElement(id: number, data: { kind?: string; label?: string;
     $label: data.label ?? existing.label,
     $x: data.x ?? existing.x,
     $y: data.y ?? existing.y,
+    $width: data.width ?? existing.width,
+    $height: data.height ?? existing.height,
     $rotation: data.rotation ?? existing.rotation,
   });
-  return { id, kind: data.kind ?? existing.kind, label: data.label ?? existing.label, x: data.x ?? existing.x, y: data.y ?? existing.y, rotation: data.rotation ?? existing.rotation };
+  return {
+    id,
+    kind: data.kind ?? existing.kind,
+    label: data.label ?? existing.label,
+    x: data.x ?? existing.x,
+    y: data.y ?? existing.y,
+    width: data.width ?? existing.width,
+    height: data.height ?? existing.height,
+    rotation: data.rotation ?? existing.rotation,
+  };
 }
 
 export function deleteElement(id: number) {
   stmts.deleteElement.run({ $id: id });
+}
+
+export function createZone(data: { name?: string; color?: string; x?: number; y?: number; width?: number; height?: number }) {
+  const result = stmts.insertZone.run({
+    $name: data.name ?? "",
+    $color: data.color ?? "#6B9FFF",
+    $x: data.x ?? 200,
+    $y: data.y ?? 200,
+    $width: data.width ?? 200,
+    $height: data.height ?? 150,
+  });
+  return {
+    id: result.lastInsertRowid,
+    name: data.name ?? "",
+    color: data.color ?? "#6B9FFF",
+    x: data.x ?? 200,
+    y: data.y ?? 200,
+    width: data.width ?? 200,
+    height: data.height ?? 150,
+  };
+}
+
+export function updateZone(id: number, data: { name?: string; color?: string; x?: number; y?: number; width?: number; height?: number }) {
+  const existing = db.prepare("SELECT * FROM zones WHERE id = ?").get(id) as any;
+  if (!existing) throw new Error(`Zone ${id} not found`);
+  stmts.updateZone.run({
+    $id: id,
+    $name: data.name ?? existing.name,
+    $color: data.color ?? existing.color,
+    $x: data.x ?? existing.x,
+    $y: data.y ?? existing.y,
+    $width: data.width ?? existing.width,
+    $height: data.height ?? existing.height,
+  });
+  return {
+    id,
+    name: data.name ?? existing.name,
+    color: data.color ?? existing.color,
+    x: data.x ?? existing.x,
+    y: data.y ?? existing.y,
+    width: data.width ?? existing.width,
+    height: data.height ?? existing.height,
+  };
+}
+
+export function deleteZone(id: number) {
+  stmts.deleteZone.run({ $id: id });
 }
 
 export function createColumn(data: { key: string; label: string; type: "mic" | "text" }) {

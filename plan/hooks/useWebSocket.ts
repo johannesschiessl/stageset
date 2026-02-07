@@ -1,5 +1,5 @@
 import { useReducer, useRef, useCallback, useEffect } from "react";
-import type { PlanState, Mic, StageElement, Column, Song, Cell, ConnectionStatus } from "../types";
+import type { PlanState, Mic, StageElement, Zone, Column, Song, Cell, ConnectionStatus } from "../types";
 
 type Action =
   | { type: "SET_FULL_STATE"; data: any }
@@ -10,6 +10,9 @@ type Action =
   | { type: "element:created"; data: StageElement; tempId?: string }
   | { type: "element:updated"; data: StageElement }
   | { type: "element:deleted"; id: number }
+  | { type: "zone:created"; data: Zone; tempId?: string }
+  | { type: "zone:updated"; data: Zone }
+  | { type: "zone:deleted"; id: number }
   | { type: "column:created"; data: Column; tempId?: string }
   | { type: "column:updated"; data: Column }
   | { type: "column:deleted"; id: number }
@@ -21,6 +24,7 @@ type Action =
   | { type: "cell:updated"; data: Cell }
   | { type: "OPTIMISTIC_MIC"; data: Mic }
   | { type: "OPTIMISTIC_ELEMENT"; data: StageElement }
+  | { type: "OPTIMISTIC_ZONE"; data: Zone }
   | { type: "OPTIMISTIC_SONG"; data: Song }
   | { type: "OPTIMISTIC_COLUMN"; data: Column };
 
@@ -33,6 +37,7 @@ const initialState: State = {
   plan: {
     mics: new Map(),
     elements: new Map(),
+    zones: new Map(),
     columns: [],
     songs: [],
     cells: new Map(),
@@ -53,6 +58,8 @@ function reducer(state: State, action: Action): State {
       for (const m of d.mics) mics.set(m.id, m);
       const elements = new Map<number | string, StageElement>();
       for (const e of d.stageElements) elements.set(e.id, e);
+      const zones = new Map<number | string, Zone>();
+      for (const z of (d.zones ?? [])) zones.set(z.id, z);
       const cells = new Map<string, Cell>();
       for (const c of d.cells) cells.set(`${c.song_id}:${c.column_id}`, c);
       return {
@@ -60,6 +67,7 @@ function reducer(state: State, action: Action): State {
         plan: {
           mics,
           elements,
+          zones,
           columns: d.columns,
           songs: d.songs,
           cells,
@@ -109,6 +117,28 @@ function reducer(state: State, action: Action): State {
       const elements = new Map(plan.elements);
       elements.delete(action.id);
       return { ...state, plan: { ...plan, elements } };
+    }
+
+    case "OPTIMISTIC_ZONE": {
+      const zones = new Map(plan.zones);
+      zones.set(action.data.id, action.data);
+      return { ...state, plan: { ...plan, zones } };
+    }
+    case "zone:created": {
+      const zones = new Map(plan.zones);
+      if (action.tempId) zones.delete(action.tempId);
+      zones.set(action.data.id, action.data);
+      return { ...state, plan: { ...plan, zones } };
+    }
+    case "zone:updated": {
+      const zones = new Map(plan.zones);
+      zones.set(action.data.id, action.data);
+      return { ...state, plan: { ...plan, zones } };
+    }
+    case "zone:deleted": {
+      const zones = new Map(plan.zones);
+      zones.delete(action.id);
+      return { ...state, plan: { ...plan, zones } };
     }
 
     case "OPTIMISTIC_COLUMN": {

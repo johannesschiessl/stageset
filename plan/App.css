@@ -15,7 +15,11 @@
   --mic-color: #FF6B6B;
   --speaker-color: #4ECDC4;
   --monitor-color: #FFE66D;
-  --di-color: #A78BFA;
+  --stagebox-color: #FF9F43;
+  --mixer-color: #C084FC;
+  --object-color: #555555;
+  --zone-color: #6B9FFF;
+  --equipment-color: #FF9F43;
   --song-color: #A78BFA;
   --add-color: #6BCB77;
   --danger-color: #FF4444;
@@ -131,6 +135,14 @@ body {
   border-bottom: 3px solid var(--border);
   flex-wrap: wrap;
   flex-shrink: 0;
+  align-items: center;
+}
+
+.toolbar-separator {
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+  margin: 0 0.25rem;
 }
 
 .toolbar-btn {
@@ -154,7 +166,55 @@ body {
 .toolbar-btn.mic { border-color: var(--mic-color); color: var(--mic-color); }
 .toolbar-btn.speaker { border-color: var(--speaker-color); color: var(--speaker-color); }
 .toolbar-btn.monitor { border-color: var(--monitor-color); color: var(--monitor-color); }
-.toolbar-btn.di { border-color: var(--di-color); color: var(--di-color); }
+.toolbar-btn.equipment { border-color: var(--equipment-color); color: var(--equipment-color); }
+.toolbar-btn.equipment.active { background: var(--equipment-color); color: var(--bg-dark); }
+.toolbar-btn.object { border-color: var(--object-color); color: var(--text-muted); }
+.toolbar-btn.zone { border-color: var(--zone-color); color: var(--zone-color); }
+
+/* Equipment popover */
+.toolbar-popover-wrap {
+  position: relative;
+}
+
+.toolbar-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--bg-dark);
+  border: 3px solid var(--equipment-color);
+  z-index: 50;
+  min-width: 160px;
+}
+
+.toolbar-popover-item {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+}
+
+.toolbar-popover-item:last-child {
+  border-bottom: none;
+}
+
+.toolbar-popover-item:hover {
+  background: var(--equipment-color);
+  color: var(--bg-dark);
+}
+
+.toolbar-popover-item.stagebox { }
+.toolbar-popover-item.mixer { }
 
 .stage-canvas {
   flex: 1;
@@ -193,9 +253,12 @@ body {
   color: var(--text-muted);
   border-top: 2px dashed var(--border);
   pointer-events: none;
+  z-index: 5;
 }
 
-/* Draggable Items */
+/* ============================================
+   DRAGGABLE ITEMS
+   ============================================ */
 .stage-item {
   position: absolute;
   cursor: grab;
@@ -211,7 +274,7 @@ body {
   background: var(--bg-card);
   border: 3px solid;
   text-align: center;
-  z-index: 1;
+  z-index: 3;
 }
 
 .stage-item:active {
@@ -219,11 +282,25 @@ body {
   z-index: 10;
 }
 
-.stage-item.mic { border-color: var(--mic-color); }
-.stage-item.speaker { border-color: var(--speaker-color); }
-.stage-item.monitor { border-color: var(--monitor-color); }
-.stage-item.di_box { border-color: var(--di-color); }
-.stage-item.custom { border-color: var(--text-muted); }
+.stage-item.mic { border-color: var(--mic-color); z-index: 3; }
+.stage-item.speaker { border-color: var(--speaker-color); z-index: 3; }
+.stage-item.monitor { border-color: var(--monitor-color); z-index: 3; }
+.stage-item.stagebox { border-color: var(--stagebox-color); z-index: 3; }
+.stage-item.mixer { border-color: var(--mixer-color); z-index: 3; }
+
+/* Objects: behind equipment/mics */
+.stage-item.object {
+  border-color: var(--object-color);
+  border-style: dashed;
+  background: var(--bg-dark);
+  z-index: 2;
+  min-width: 80px;
+  min-height: 60px;
+}
+
+.stage-item.object:active {
+  z-index: 10;
+}
 
 .stage-item .item-number {
   font-size: 1.1rem;
@@ -244,9 +321,91 @@ body {
   white-space: nowrap;
 }
 
+.stage-item .item-label.object-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  max-width: none;
+  color: var(--object-color);
+}
+
 .stage-item .item-icon {
   font-size: 1.2rem;
   line-height: 1;
+}
+
+/* ============================================
+   ZONE ITEMS
+   ============================================ */
+.zone-item {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  border: 3px dashed;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.zone-item:active {
+  cursor: grabbing;
+  z-index: 9;
+}
+
+.zone-name {
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0.2rem 0.4rem;
+  pointer-events: none;
+}
+
+/* ============================================
+   RESIZE HANDLE
+   ============================================ */
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  touch-action: none;
+  border-right: 3px solid var(--text-muted);
+  border-bottom: 3px solid var(--text-muted);
+}
+
+.stage-item.object .resize-handle {
+  border-color: var(--object-color);
+}
+
+/* ============================================
+   COLOR PICKER (Zone Dialog)
+   ============================================ */
+.color-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  width: 36px;
+  height: 36px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-swatch.selected {
+  border-color: var(--text-primary);
+  outline: 2px solid var(--bg-dark);
+  outline-offset: -5px;
+}
+
+.color-swatch:hover {
+  border-color: var(--text-muted);
 }
 
 /* Dialog / Modal */

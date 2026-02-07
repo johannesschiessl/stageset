@@ -2,12 +2,13 @@ import React, { useRef, useCallback } from "react";
 import type { Mic, StageElement } from "../types";
 
 const DRAG_THRESHOLD = 5;
+const MIN_SIZE = 40;
 
 const KIND_ICONS: Record<string, string> = {
   speaker: "\u{1F50A}",
   monitor: "\u{1F3A7}",
-  di_box: "\u{1F50C}",
-  custom: "\u{2B1B}",
+  stagebox: "\u{1F4E6}",
+  mixer: "\u{1F39B}",
 };
 
 interface Props {
@@ -15,18 +16,19 @@ interface Props {
   isMic: boolean;
   onDragEnd: (id: number | string, x: number, y: number) => void;
   onTap: (item: Mic | StageElement) => void;
+  onResize?: (id: number | string, width: number, height: number) => void;
 }
 
-export function DraggableItem({ item, isMic, onDragEnd, onTap }: Props) {
+export function DraggableItem({ item, isMic, onDragEnd, onTap, onResize }: Props) {
   const startPos = useRef({ x: 0, y: 0, elX: 0, elY: 0 });
   const moved = useRef(false);
   const posRef = useRef({ x: item.x, y: item.y });
   const elRef = useRef<HTMLDivElement>(null);
 
-  // Update ref when item changes (from server)
   posRef.current = { x: item.x, y: item.y };
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).classList.contains("resize-handle")) return;
     e.preventDefault();
     e.stopPropagation();
     const el = elRef.current;
@@ -70,12 +72,17 @@ export function DraggableItem({ item, isMic, onDragEnd, onTap }: Props) {
   }, [item.id, onDragEnd, onTap]);
 
   const kind = isMic ? "mic" : (item as StageElement).kind;
+  const isResizable = !isMic && ((item as StageElement).kind === "object");
+  const el = item as StageElement;
+  const hasSize = !isMic && el.width > 0 && el.height > 0;
+
+  const sizeStyle = hasSize ? { width: el.width, height: el.height } : {};
 
   return (
     <div
       ref={elRef}
       className={`stage-item ${kind}`}
-      style={{ left: item.x, top: item.y }}
+      style={{ left: item.x, top: item.y, ...sizeStyle }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -85,12 +92,71 @@ export function DraggableItem({ item, isMic, onDragEnd, onTap }: Props) {
           <span className="item-number">{(item as Mic).number}</span>
           {(item as Mic).name && <span className="item-label">{(item as Mic).name}</span>}
         </>
+      ) : (item as StageElement).kind === "object" ? (
+        <span className="item-label object-label">{(item as StageElement).label || "OBJECT"}</span>
       ) : (
         <>
           <span className="item-icon">{KIND_ICONS[kind] ?? "\u{2B1B}"}</span>
           {(item as StageElement).label && <span className="item-label">{(item as StageElement).label}</span>}
         </>
       )}
+      {isResizable && onResize && (
+        <ResizeHandle itemId={item.id} parentRef={elRef} onResize={onResize} />
+      )}
     </div>
+  );
+}
+
+function ResizeHandle({ itemId, parentRef, onResize }: {
+  itemId: number | string;
+  parentRef: React.RefObject<HTMLDivElement | null>;
+  onResize: (id: number | string, w: number, h: number) => void;
+}) {
+  const startRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  const handleDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const handle = handleRef.current;
+    const parent = parentRef.current;
+    if (!handle || !parent) return;
+    handle.setPointerCapture(e.pointerId);
+    startRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      w: parent.offsetWidth,
+      h: parent.offsetHeight,
+    };
+  }, [parentRef]);
+
+  const handleMove = useCallback((e: React.PointerEvent) => {
+    const handle = handleRef.current;
+    const parent = parentRef.current;
+    if (!handle?.hasPointerCapture(e.pointerId) || !parent) return;
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
+    const newW = Math.max(MIN_SIZE, startRef.current.w + dx);
+    const newH = Math.max(MIN_SIZE, startRef.current.h + dy);
+    parent.style.width = `${newW}px`;
+    parent.style.height = `${newH}px`;
+  }, [parentRef]);
+
+  const handleUp = useCallback((e: React.PointerEvent) => {
+    const handle = handleRef.current;
+    const parent = parentRef.current;
+    if (!handle?.hasPointerCapture(e.pointerId) || !parent) return;
+    handle.releasePointerCapture(e.pointerId);
+    onResize(itemId, parent.offsetWidth, parent.offsetHeight);
+  }, [itemId, onResize, parentRef]);
+
+  return (
+    <div
+      ref={handleRef}
+      className="resize-handle"
+      onPointerDown={handleDown}
+      onPointerMove={handleMove}
+      onPointerUp={handleUp}
+    />
   );
 }
