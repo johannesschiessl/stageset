@@ -108,14 +108,6 @@ body {
   border-left: none;
 }
 
-.tab-bar > .toolbar-popover-wrap .tab-btn {
-  border-left: none;
-}
-
-.tab-bar > .toolbar-popover-wrap + .tab-btn {
-  border-left: none;
-}
-
 .tab-btn.active {
   background: var(--text-primary);
   color: var(--bg-dark);
@@ -1084,62 +1076,7 @@ body {
 }
 
 /* ============================================
-   CONFIG TAB
-   ============================================ */
-
-.config-section-heading {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--text-muted);
-  padding: 0 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.config-list-view .add-row-btn {
-  margin-top: 0;
-}
-
-.config-preset-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.config-preset-emoji {
-  font-size: 1.35rem;
-  line-height: 1;
-  width: 1.6rem;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.config-preset-label {
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.config-color-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.config-color-dot {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border);
-}
-
-/* ============================================
-   NOTIFICATION POPOVER
+   NOTIFY MODAL
    ============================================ */
 
 .notify-btn.active,
@@ -1148,62 +1085,208 @@ body {
   color: #000;
 }
 
-.notify-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 250px;
-  max-height: 320px;
-  overflow-y: auto;
-  background: var(--bg-dark);
-  border: 3px solid var(--notify-color);
-  z-index: 80;
+.notify-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
 }
 
-.notify-popover-item {
+.notify-modal {
+  background: var(--bg-dark);
+  border: 3px solid var(--notify-color);
+  width: 90vw;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.notify-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 3px solid var(--border);
+}
+
+.notify-modal-header h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--notify-color);
+  margin: 0;
+}
+
+.notify-modal-header-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
-  padding: 0.6rem 1rem;
+}
+
+.notify-edit-toggle {
+  background: transparent;
+  border: 3px solid var(--border);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 0.3rem 0.75rem;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.notify-edit-toggle:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.notify-edit-toggle.active {
+  background: var(--text-primary);
+  color: var(--bg-dark);
+  border-color: var(--text-primary);
+}
+
+.notify-modal-close {
+  background: transparent;
+  border: 3px solid var(--border);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.notify-modal-close:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.notify-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.notify-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  border-top: 4px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+}
+
+.notify-card-add {
+  border-color: var(--add-color);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--add-color);
+  font-family: inherit;
+  padding: 0;
+}
+
+.notify-card-add:hover {
+  background: var(--add-color);
+  color: var(--bg-dark);
+}
+
+.notify-card-plus {
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.notify-card-add-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.notify-card-trigger {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border);
+  cursor: pointer;
   color: var(--text-primary);
   font-family: inherit;
+}
+
+.notify-card-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notify-card-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.notify-card-label {
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  text-align: left;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.notify-popover-item:last-child {
-  border-bottom: none;
-}
-
-.notify-popover-item:hover,
-.notify-popover-item.selected {
-  background: var(--notify-color);
-  color: #000;
-}
-
-.notify-popover-item-emoji {
-  font-size: 1.4rem;
-  line-height: 1;
-  width: 1.6rem;
   text-align: center;
-  flex-shrink: 0;
+  word-break: break-word;
 }
 
-.notify-popover-empty {
-  padding: 0.75rem;
+.notify-card-actions {
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+.notify-card-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
   color: var(--text-muted);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.4rem;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notify-card-edit:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.notify-card-delete:hover {
+  background: var(--danger-color);
+  color: var(--bg-dark);
+}
+
+.notify-card-edit + .notify-card-delete {
+  border-left: 1px solid var(--border);
 }
 
 /* ============================================

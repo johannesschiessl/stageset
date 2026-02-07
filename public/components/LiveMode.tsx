@@ -1,24 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { usePlan } from "../App";
-import type { Mic, Column, Song } from "../types";
-import type { NotificationPreset } from "../types";
-import { NotificationPopover } from "./NotificationPopover";
+import type { Mic } from "../types";
 
 interface Props {
   onExit: () => void;
   onToggleNotifications: () => void;
-  onCloseNotifications: () => void;
-  onSendNotification: (presetId: number) => void;
-  notificationPresets: NotificationPreset[];
   notificationsOpen: boolean;
 }
 
 export function LiveMode({
   onExit,
   onToggleNotifications,
-  onCloseNotifications,
-  onSendNotification,
-  notificationPresets,
   notificationsOpen,
 }: Props) {
   const { state } = usePlan();
@@ -106,17 +98,12 @@ export function LiveMode({
         <div className="live-topbar">
           <button className="live-exit-btn" onClick={onExit}>EXIT LIVE</button>
           <div className="live-counter">NO SONGS</div>
-          <div className="toolbar-popover-wrap">
-            <button className={`live-notify-btn ${notificationsOpen ? "active" : ""}`} onClick={onToggleNotifications}>
-              Notify
-            </button>
-            <NotificationPopover
-              open={notificationsOpen}
-              presets={notificationPresets}
-              onClose={onCloseNotifications}
-              onSend={onSendNotification}
-            />
-          </div>
+          <button
+            className={`live-notify-btn ${notificationsOpen ? "active" : ""}`}
+            onClick={onToggleNotifications}
+          >
+            Notify
+          </button>
         </div>
         <div className="live-empty">No songs in setlist</div>
       </div>
@@ -127,7 +114,6 @@ export function LiveMode({
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === totalSongs - 1;
 
-  // Build the next/prev song labels
   const prevSong = !isFirst ? songs[currentIndex - 1] : null;
   const nextSong = !isLast ? songs[currentIndex + 1] : null;
 
@@ -145,17 +131,12 @@ export function LiveMode({
             style={{ width: `${((currentIndex + 1) / totalSongs) * 100}%` }}
           />
         </div>
-        <div className="toolbar-popover-wrap">
-          <button className={`live-notify-btn ${notificationsOpen ? "active" : ""}`} onClick={onToggleNotifications}>
-            Notify
-          </button>
-          <NotificationPopover
-            open={notificationsOpen}
-            presets={notificationPresets}
-            onClose={onCloseNotifications}
-            onSend={onSendNotification}
-          />
-        </div>
+        <button
+          className={`live-notify-btn ${notificationsOpen ? "active" : ""}`}
+          onClick={onToggleNotifications}
+        >
+          Notify
+        </button>
       </div>
 
       {/* Main content area with side nav */}
@@ -174,10 +155,7 @@ export function LiveMode({
 
         {/* Center: Current song */}
         <div className="live-center">
-          {/* Song number indicator */}
           <div className="live-song-number">#{currentIndex + 1}</div>
-
-          {/* Song title */}
           <div className="live-song-title">{song.title || "Untitled"}</div>
           {song.artist && (
             <div className="live-song-artist">{song.artist}</div>
@@ -213,7 +191,6 @@ export function LiveMode({
                 );
               }
 
-              // Text column
               return (
                 <div key={col.id} className="live-column-box live-column-text">
                   <div className="live-column-label">{col.label}</div>

@@ -1,16 +1,11 @@
 import React from "react";
-import type { NotificationPreset } from "../types";
-import { NotificationPopover } from "./NotificationPopover";
 
 interface Props {
-  activeTab: "stage" | "setlist" | "config";
-  onTabChange: (tab: "stage" | "setlist" | "config") => void;
+  activeTab: "stage" | "setlist";
+  onTabChange: (tab: "stage" | "setlist") => void;
   onLiveMode: () => void;
   onNotificationsToggle: () => void;
   notificationsOpen: boolean;
-  notificationPresets: NotificationPreset[];
-  onSendNotification: (presetId: number) => void;
-  onCloseNotifications: () => void;
 }
 
 export function TabBar({
@@ -19,9 +14,6 @@ export function TabBar({
   onLiveMode,
   onNotificationsToggle,
   notificationsOpen,
-  notificationPresets,
-  onSendNotification,
-  onCloseNotifications,
 }: Props) {
   return (
     <div className="tab-bar">
@@ -38,25 +30,11 @@ export function TabBar({
         Setlist
       </button>
       <button
-        className={`tab-btn ${activeTab === "config" ? "active" : ""}`}
-        onClick={() => onTabChange("config")}
+        className={`tab-btn notify-btn ${notificationsOpen ? "active" : ""}`}
+        onClick={onNotificationsToggle}
       >
-        Config
+        Notify
       </button>
-      <div className="toolbar-popover-wrap">
-        <button
-          className={`tab-btn notify-btn ${notificationsOpen ? "active" : ""}`}
-          onClick={onNotificationsToggle}
-        >
-          Notify
-        </button>
-        <NotificationPopover
-          open={notificationsOpen}
-          presets={notificationPresets}
-          onClose={onCloseNotifications}
-          onSend={onSendNotification}
-        />
-      </div>
       <button className="tab-btn live-btn" onClick={onLiveMode}>
         LIVE
       </button>

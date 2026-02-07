@@ -7,7 +7,7 @@ import { TabBar } from "./components/TabBar";
 import { StagePlan } from "./components/StagePlan";
 import { Setlist } from "./components/Setlist";
 import { LiveMode } from "./components/LiveMode";
-import { ConfigTab } from "./components/ConfigTab";
+import { NotifyModal } from "./components/NotifyModal";
 import { NotificationOverlay } from "./components/NotificationOverlay";
 import { ShowSelector } from "./components/ShowSelector";
 import { ShowSwitcher } from "./components/ShowSwitcher";
@@ -18,7 +18,7 @@ export const usePlan = () => useContext(PlanContext);
 
 function App() {
   const { state, status, send } = usePlanWebSocket();
-  const [activeTab, setActiveTab] = useState<"stage" | "setlist" | "config">("stage");
+  const [activeTab, setActiveTab] = useState<"stage" | "setlist">("stage");
   const [liveMode, setLiveMode] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -39,13 +39,10 @@ function App() {
   }, []);
 
   // Listen for show:changed messages via the WebSocket dispatch
-  // We tap into the ws.onmessage by watching the state for changes
-  // triggered by show:changed. We use a custom event approach.
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setCurrentShow(detail.show);
-      // Refresh shows list
       fetch("/api/shows")
         .then((res) => res.json())
         .then((data) => setShows(data.shows))
@@ -78,7 +75,6 @@ function App() {
       if (res.ok) {
         setCurrentShow(name);
         setShows((prev) => [...prev, name].sort());
-        // Select the show (which also loads its state)
         await fetch("/api/shows/select", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -97,10 +93,6 @@ function App() {
         setShows((prev) => prev.filter((s) => s !== name));
       }
     } catch {}
-  }, []);
-
-  const openNotifications = useCallback(() => {
-    setNotificationsOpen(true);
   }, []);
 
   const closeNotifications = useCallback(() => {
@@ -123,13 +115,13 @@ function App() {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "n") {
         event.preventDefault();
-        openNotifications();
+        toggleNotifications();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openNotifications]);
+  }, [toggleNotifications]);
 
   useEffect(() => {
     setNotificationsOpen(false);
@@ -154,9 +146,6 @@ function App() {
         <LiveMode
           onExit={() => setLiveMode(false)}
           onToggleNotifications={toggleNotifications}
-          onCloseNotifications={closeNotifications}
-          onSendNotification={sendNotification}
-          notificationPresets={state.notificationPresets}
           notificationsOpen={notificationsOpen}
         />
       ) : (
@@ -175,19 +164,20 @@ function App() {
               onLiveMode={() => setLiveMode(true)}
               onNotificationsToggle={toggleNotifications}
               notificationsOpen={notificationsOpen}
-              notificationPresets={state.notificationPresets}
-              onSendNotification={sendNotification}
-              onCloseNotifications={closeNotifications}
             />
           </div>
           <div className="tab-content">
             {activeTab === "stage" && <StagePlan />}
             {activeTab === "setlist" && <Setlist />}
-            {activeTab === "config" && <ConfigTab />}
           </div>
         </>
       )}
 
+      <NotifyModal
+        open={notificationsOpen}
+        onClose={closeNotifications}
+        onSend={sendNotification}
+      />
       <NotificationOverlay event={state.notificationEvent} />
     </PlanContext.Provider>
   );
