@@ -1,3 +1,13 @@
+# Stageset
+
+This is a codebase under active development, so there is no need to add backwards compatibility or legacy migrations.
+
+### Styling
+
+Do not apply any visual styles to components from `@/components/ui`. Use the defaults instead. Unless absolutely necessary, do not change the padding, margin, border, or color, etc. However, layout styles like flex and grid are fine. If you need colors, use the CSS variables defined in `@/styles.css`. Everything is in dark mode by default. However, make sure you don't build anything for light mode and adjust the custom colours accordingly.
+
+### Bun
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
