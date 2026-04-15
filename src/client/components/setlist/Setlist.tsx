@@ -80,11 +80,9 @@ export function Setlist({
   return (
     <div className="mb-10">
       <div className="mb-2 flex items-center justify-between px-2">
-        <span className="text-muted-foreground font-medium">
-          {songs.length} Songs
-        </span>
+        <Badge variant="outline">{songs.length} SONGS</Badge>
         <Button onClick={onAddSong} className="w-fit">
-          Add Song
+          ADD SONG
         </Button>
       </div>
 

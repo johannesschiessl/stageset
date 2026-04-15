@@ -21,11 +21,9 @@ export function Mics({
   return (
     <div className="mb-10">
       <div className="mb-2 flex items-center justify-between px-2">
-        <span className="text-muted-foreground font-medium">
-          {microphones.length} Mics
-        </span>
+        <Badge variant="outline">{microphones.length} MICS</Badge>
         <Button onClick={onAddMicrophone} className="w-fit">
-          Add Mic
+          ADD MIC
         </Button>
       </div>
 
