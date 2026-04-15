@@ -4,12 +4,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/Tabs";
+import type { Microphone, Song } from "../../types";
 import { ConnectionIndicator } from "../components/ConnectionIndicator";
 import { Mics } from "../components/mics/Mics";
 import { Setlist } from "../components/setlist/Setlist";
+import { ShowSwitcher } from "../components/shows/ShowSwitcher";
 import { Button } from "../components/ui/Button";
-import { useQuery, useMutation } from "../lib/useWebSocket";
-import type { Microphone, Song } from "../../types";
+import { useMutation, useQuery } from "../lib/useWebSocket";
 
 export { Microphone, Song } from "../../types";
 
@@ -101,10 +102,11 @@ export function Index() {
     <Tabs defaultValue="setlist" className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex items-center gap-2">
+          <ConnectionIndicator />
           <span className="text-sm font-bold tracking-widest text-foreground">
             STAGESET
           </span>
-          <ConnectionIndicator />
+          <ShowSwitcher />
         </div>
         <div className="flex items-center gap-2">
           <TabsList>
