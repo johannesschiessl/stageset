@@ -14,43 +14,35 @@ import { Textarea } from "@/client/components/ui/Textarea";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  microphones: string[];
-  monitor: string[];
-  notes: string;
+import type { Microphone, Song } from "@/client/routes/index";
+
+function micLabel(mic: Microphone) {
+  return mic.name ? `${mic.number} – ${mic.name}` : String(mic.number);
 }
 
-const MOCK_MICROPHONES = [
-  { id: "1", name: "Mic 1" },
-  { id: "2", name: "Mic 2" },
-  { id: "3", name: "Mic 3" },
-  { id: "4", name: "Mic 4" },
-  { id: "5", name: "Mic 5" },
-];
+interface SetlistProps {
+  songs: Song[];
+  microphones: Microphone[];
+  onUpdateSong: (id: string, updates: Partial<Song>) => void;
+  onAddSong: () => void;
+  onRemoveSong: (id: string) => void;
+  onMoveSong: (id: string, direction: "up" | "down") => void;
+  onToggleMicrophone: (
+    songId: string,
+    micId: string,
+    type: "microphones" | "monitor",
+  ) => void;
+}
 
-export function Setlist() {
-  const [songs, setSongs] = useState<Song[]>([
-    {
-      id: "1",
-      title: "Song One",
-      artist: "Artist One",
-      microphones: ["1", "2"],
-      monitor: ["1"],
-      notes: "",
-    },
-    {
-      id: "2",
-      title: "Song Two",
-      artist: "Artist Two",
-      microphones: ["2", "3"],
-      monitor: ["2", "3"],
-      notes: "",
-    },
-  ]);
-
+export function Setlist({
+  songs,
+  microphones,
+  onUpdateSong,
+  onAddSong,
+  onRemoveSong,
+  onMoveSong,
+  onToggleMicrophone,
+}: SetlistProps) {
   const [openDropdowns, setOpenDropdowns] = useState<{
     [key: string]: "mics" | "monitor" | null;
   }>({});
@@ -78,63 +70,6 @@ export function Setlist() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const updateSong = (id: string, updates: Partial<Song>) => {
-    setSongs(
-      songs.map((song) => (song.id === id ? { ...song, ...updates } : song)),
-    );
-  };
-
-  const addSong = () => {
-    const newId = Math.max(...songs.map((s) => parseInt(s.id)), 0) + 1;
-    setSongs([
-      ...songs,
-      {
-        id: newId.toString(),
-        title: "",
-        artist: "",
-        microphones: [],
-        monitor: [],
-        notes: "",
-      },
-    ]);
-  };
-
-  const removeSong = (id: string) => {
-    setSongs(songs.filter((song) => song.id !== id));
-  };
-
-  const moveSong = (id: string, direction: "up" | "down") => {
-    const index = songs.findIndex((s) => s.id === id);
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === songs.length - 1)
-    ) {
-      return;
-    }
-
-    const newSongs = [...songs];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    [newSongs[index], newSongs[swapIndex]] = [
-      newSongs[swapIndex],
-      newSongs[index],
-    ];
-    setSongs(newSongs);
-  };
-
-  const toggleMicrophone = (
-    songId: string,
-    micId: string,
-    type: "microphones" | "monitor",
-  ) => {
-    const song = songs.find((s) => s.id === songId);
-    if (!song) return;
-    const currentMics = song[type];
-    const updated = currentMics.includes(micId)
-      ? currentMics.filter((m) => m !== micId)
-      : [...currentMics, micId];
-    updateSong(songId, { [type]: updated });
-  };
-
   const toggleDropdown = (songId: string, type: "mics" | "monitor") => {
     setOpenDropdowns((prev) => ({
       ...prev,
@@ -148,7 +83,7 @@ export function Setlist() {
         <span className="text-muted-foreground font-medium">
           {songs.length} Songs
         </span>
-        <Button onClick={addSong} className="w-fit">
+        <Button onClick={onAddSong} className="w-fit">
           Add Song
         </Button>
       </div>
@@ -176,7 +111,7 @@ export function Setlist() {
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0"
-                      onClick={() => moveSong(song.id, "up")}
+                      onClick={() => onMoveSong(song.id, "up")}
                       disabled={index === 0}
                     >
                       <ChevronUp className="h-4 w-4" />
@@ -185,7 +120,7 @@ export function Setlist() {
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0"
-                      onClick={() => moveSong(song.id, "down")}
+                      onClick={() => onMoveSong(song.id, "down")}
                       disabled={index === songs.length - 1}
                     >
                       <ChevronDown className="h-4 w-4" />
@@ -199,7 +134,7 @@ export function Setlist() {
                       placeholder="Song title"
                       value={song.title}
                       onChange={(e) =>
-                        updateSong(song.id, { title: e.target.value })
+                        onUpdateSong(song.id, { title: e.target.value })
                       }
                       className="border-transparent bg-transparent dark:bg-transparent transition-colors focus-visible:border-input focus-visible:bg-input/30 text-sm font-semibold"
                     />
@@ -207,7 +142,7 @@ export function Setlist() {
                       placeholder="Artist"
                       value={song.artist}
                       onChange={(e) =>
-                        updateSong(song.id, { artist: e.target.value })
+                        onUpdateSong(song.id, { artist: e.target.value })
                       }
                       className="border-transparent bg-transparent dark:bg-transparent transition-colors focus-visible:border-input focus-visible:bg-input/30 text-muted-foreground"
                     />
@@ -235,10 +170,12 @@ export function Setlist() {
                               variant="default"
                               className="text-[0.65rem]"
                             >
-                              {
-                                MOCK_MICROPHONES.find((m) => m.id === micId)
-                                  ?.name
-                              }
+                              {(() => {
+                                const mic = microphones.find(
+                                  (m) => m.id === micId,
+                                );
+                                return mic ? micLabel(mic) : micId;
+                              })()}
                             </Badge>
                           ))
                         ) : (
@@ -252,7 +189,7 @@ export function Setlist() {
 
                     {openDropdowns[song.id] === "mics" && (
                       <div className="absolute top-full left-0 mt-1 bg-background border border-input rounded-none p-2 z-50 min-w-48 shadow-lg">
-                        {MOCK_MICROPHONES.map((mic) => (
+                        {microphones.map((mic) => (
                           <label
                             key={mic.id}
                             className="flex items-center gap-2 p-1.5 text-xs cursor-pointer hover:bg-muted rounded-none"
@@ -260,10 +197,14 @@ export function Setlist() {
                             <Checkbox
                               checked={song.microphones.includes(mic.id)}
                               onCheckedChange={() =>
-                                toggleMicrophone(song.id, mic.id, "microphones")
+                                onToggleMicrophone(
+                                  song.id,
+                                  mic.id,
+                                  "microphones",
+                                )
                               }
                             />
-                            {mic.name}
+                            {micLabel(mic)}
                           </label>
                         ))}
                       </div>
@@ -292,10 +233,12 @@ export function Setlist() {
                               variant="secondary"
                               className="text-[0.65rem]"
                             >
-                              {
-                                MOCK_MICROPHONES.find((m) => m.id === micId)
-                                  ?.name
-                              }
+                              {(() => {
+                                const mic = microphones.find(
+                                  (m) => m.id === micId,
+                                );
+                                return mic ? micLabel(mic) : micId;
+                              })()}
                             </Badge>
                           ))
                         ) : (
@@ -309,7 +252,7 @@ export function Setlist() {
 
                     {openDropdowns[song.id] === "monitor" && (
                       <div className="absolute top-full left-0 mt-1 bg-background border border-input rounded-none p-2 z-50 min-w-48 shadow-lg">
-                        {MOCK_MICROPHONES.map((mic) => (
+                        {microphones.map((mic) => (
                           <label
                             key={mic.id}
                             className="flex items-center gap-2 p-1.5 text-xs cursor-pointer hover:bg-muted rounded-none"
@@ -317,10 +260,10 @@ export function Setlist() {
                             <Checkbox
                               checked={song.monitor.includes(mic.id)}
                               onCheckedChange={() =>
-                                toggleMicrophone(song.id, mic.id, "monitor")
+                                onToggleMicrophone(song.id, mic.id, "monitor")
                               }
                             />
-                            {mic.name}
+                            {micLabel(mic)}
                           </label>
                         ))}
                       </div>
@@ -333,7 +276,7 @@ export function Setlist() {
                     placeholder="Notes"
                     value={song.notes}
                     onChange={(e) =>
-                      updateSong(song.id, { notes: e.target.value })
+                      onUpdateSong(song.id, { notes: e.target.value })
                     }
                     className="border-transparent bg-transparent dark:bg-transparent transition-colors h-16 resize-none focus-visible:border-input focus-visible:bg-input/30"
                   />
@@ -344,7 +287,7 @@ export function Setlist() {
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                    onClick={() => removeSong(song.id)}
+                    onClick={() => onRemoveSong(song.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
