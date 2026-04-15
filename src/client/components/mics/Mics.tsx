@@ -2,7 +2,7 @@ import { Badge } from "@/client/components/ui/Badge";
 import { Button } from "@/client/components/ui/Button";
 import { Card, CardContent } from "@/client/components/ui/Card";
 import { Input } from "@/client/components/ui/Input";
-import type { Microphone } from "@/client/routes/index";
+import type { Microphone } from "@/types";
 import { Trash2 } from "lucide-react";
 
 interface MicsProps {

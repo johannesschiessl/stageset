@@ -1,7 +1,10 @@
+import { useWebSocketConnection } from "@/client/lib/useWebSocket";
 import { Badge } from "./ui/Badge";
 import { Spinner } from "./ui/Spinner";
 
-export function ConnectionIndicator({ connected }: { connected: boolean }) {
+export function ConnectionIndicator() {
+  const connected = useWebSocketConnection();
+
   if (connected) {
     return <Badge>Connected</Badge>;
   }

@@ -14,7 +14,7 @@ import { Textarea } from "@/client/components/ui/Textarea";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import type { Microphone, Song } from "@/client/routes/index";
+import type { Microphone, Song } from "@/types";
 
 function micLabel(mic: Microphone) {
   return mic.name ? `${mic.number} – ${mic.name}` : String(mic.number);

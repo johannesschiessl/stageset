@@ -4,149 +4,97 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/Tabs";
-import { useState } from "react";
 import { ConnectionIndicator } from "../components/ConnectionIndicator";
 import { Mics } from "../components/mics/Mics";
 import { Setlist } from "../components/setlist/Setlist";
 import { Button } from "../components/ui/Button";
+import { useQuery, useMutation } from "../lib/useWebSocket";
+import type { Microphone, Song } from "../../types";
 
-export interface Microphone {
-  id: string;
-  number: number;
-  name: string;
-}
-
-export interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  microphones: string[];
-  monitor: string[];
-  notes: string;
-}
-
-const MOCK_MICROPHONES: Microphone[] = [
-  { id: "1", number: 1, name: "Mic 1" },
-  { id: "2", number: 2, name: "Mic 2" },
-  { id: "3", number: 3, name: "Mic 3" },
-  { id: "4", number: 4, name: "Mic 4" },
-  { id: "5", number: 5, name: "Mic 5" },
-];
-
-const MOCK_SONGS: Song[] = [
-  {
-    id: "1",
-    title: "Song One",
-    artist: "Artist One",
-    microphones: ["1", "2"],
-    monitor: ["1"],
-    notes: "",
-  },
-  {
-    id: "2",
-    title: "Song Two",
-    artist: "Artist Two",
-    microphones: ["2", "3"],
-    monitor: ["2", "3"],
-    notes: "",
-  },
-];
+export { Microphone, Song } from "../../types";
 
 export function Index() {
-  const [microphones, setMicrophones] =
-    useState<Microphone[]>(MOCK_MICROPHONES);
-  const [songs, setSongs] = useState<Song[]>(MOCK_SONGS);
+  const { data: microphones = [] } = useQuery("microphones", []);
+  const { data: songs = [] } = useQuery("songs", []);
+
+  const { mutate: addMicrophoneApi } = useMutation("addMicrophone");
+  const { mutate: updateMicrophoneApi } = useMutation("updateMicrophone");
+  const { mutate: removeMicrophoneApi } = useMutation("removeMicrophone");
+
+  const { mutate: addSongApi } = useMutation("addSong");
+  const { mutate: updateSongApi } = useMutation("updateSong");
+  const { mutate: removeSongApi } = useMutation("removeSong");
+  const { mutate: moveSongApi } = useMutation("moveSong");
+  const { mutate: toggleMicrophoneApi } = useMutation("toggleMicrophone");
 
   // Microphone callbacks
-  const addMicrophone = () => {
-    const newId = Math.max(...microphones.map((m) => parseInt(m.id)), 0) + 1;
-    const usedNumbers = new Set(microphones.map((m) => m.number));
-    let nextNumber = 1;
-    while (usedNumbers.has(nextNumber)) nextNumber++;
-    setMicrophones([
-      ...microphones,
-      {
-        id: newId.toString(),
-        number: nextNumber,
-        name: "",
-      },
-    ]);
+  const addMicrophone = async () => {
+    try {
+      await addMicrophoneApi();
+    } catch (err) {
+      console.error("Failed to add microphone:", err);
+    }
   };
 
-  const updateMicrophone = (id: string, updates: Partial<Microphone>) => {
-    setMicrophones(
-      microphones.map((mic) => (mic.id === id ? { ...mic, ...updates } : mic)),
-    );
+  const updateMicrophone = async (id: string, updates: Partial<Microphone>) => {
+    try {
+      await updateMicrophoneApi({ id, updates });
+    } catch (err) {
+      console.error("Failed to update microphone:", err);
+    }
   };
 
-  const removeMicrophone = (id: string) => {
-    setMicrophones(microphones.filter((mic) => mic.id !== id));
-    // Remove this mic from all songs
-    setSongs(
-      songs.map((song) => ({
-        ...song,
-        microphones: song.microphones.filter((m) => m !== id),
-        monitor: song.monitor.filter((m) => m !== id),
-      })),
-    );
+  const removeMicrophone = async (id: string) => {
+    try {
+      await removeMicrophoneApi({ id });
+    } catch (err) {
+      console.error("Failed to remove microphone:", err);
+    }
   };
 
   // Song callbacks
-  const updateSong = (id: string, updates: Partial<Song>) => {
-    setSongs(
-      songs.map((song) => (song.id === id ? { ...song, ...updates } : song)),
-    );
-  };
-
-  const addSong = () => {
-    const newId = Math.max(...songs.map((s) => parseInt(s.id)), 0) + 1;
-    setSongs([
-      ...songs,
-      {
-        id: newId.toString(),
-        title: "",
-        artist: "",
-        microphones: [],
-        monitor: [],
-        notes: "",
-      },
-    ]);
-  };
-
-  const removeSong = (id: string) => {
-    setSongs(songs.filter((song) => song.id !== id));
-  };
-
-  const moveSong = (id: string, direction: "up" | "down") => {
-    const index = songs.findIndex((s) => s.id === id);
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === songs.length - 1)
-    ) {
-      return;
+  const updateSong = async (id: string, updates: Partial<Song>) => {
+    try {
+      await updateSongApi({ id, updates });
+    } catch (err) {
+      console.error("Failed to update song:", err);
     }
-
-    const newSongs = [...songs];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    const a = newSongs[index]!;
-    const b = newSongs[swapIndex]!;
-    newSongs[index] = b;
-    newSongs[swapIndex] = a;
-    setSongs(newSongs);
   };
 
-  const toggleMicrophone = (
+  const addSong = async () => {
+    try {
+      await addSongApi();
+    } catch (err) {
+      console.error("Failed to add song:", err);
+    }
+  };
+
+  const removeSong = async (id: string) => {
+    try {
+      await removeSongApi({ id });
+    } catch (err) {
+      console.error("Failed to remove song:", err);
+    }
+  };
+
+  const moveSong = async (id: string, direction: "up" | "down") => {
+    try {
+      await moveSongApi({ id, direction });
+    } catch (err) {
+      console.error("Failed to move song:", err);
+    }
+  };
+
+  const toggleMicrophone = async (
     songId: string,
     micId: string,
     type: "microphones" | "monitor",
   ) => {
-    const song = songs.find((s) => s.id === songId);
-    if (!song) return;
-    const currentMics = song[type];
-    const updated = currentMics.includes(micId)
-      ? currentMics.filter((m) => m !== micId)
-      : [...currentMics, micId];
-    updateSong(songId, { [type]: updated });
+    try {
+      await toggleMicrophoneApi({ songId, micId, type });
+    } catch (err) {
+      console.error("Failed to toggle microphone:", err);
+    }
   };
 
   return (
@@ -156,7 +104,7 @@ export function Index() {
           <span className="text-sm font-bold tracking-widest text-foreground">
             STAGESET
           </span>
-          <ConnectionIndicator connected={true} />
+          <ConnectionIndicator />
         </div>
         <div className="flex items-center gap-2">
           <TabsList>
