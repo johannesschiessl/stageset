@@ -1,10 +1,11 @@
-import { useState } from "react";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/Tabs";
+import { useState } from "react";
+import { ConnectionIndicator } from "../components/ConnectionIndicator";
 import { Mics } from "../components/mics/Mics";
 import { Setlist } from "../components/setlist/Setlist";
 import { Button } from "../components/ui/Button";
@@ -151,9 +152,12 @@ export function Index() {
   return (
     <Tabs defaultValue="setlist" className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b border-border px-4 py-2">
-        <span className="text-sm font-bold tracking-widest text-foreground">
-          STAGESET
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold tracking-widest text-foreground">
+            STAGESET
+          </span>
+          <ConnectionIndicator connected={true} />
+        </div>
         <div className="flex items-center gap-2">
           <TabsList>
             <TabsTrigger value="setlist">SETLIST</TabsTrigger>
