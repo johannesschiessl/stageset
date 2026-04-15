@@ -4,6 +4,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/Tabs";
+import { Link } from "@tanstack/react-router";
 import type { Microphone, Song } from "../../types";
 import { ConnectionIndicator } from "../components/ConnectionIndicator";
 import { Mics } from "../components/mics/Mics";
@@ -113,7 +114,9 @@ export function Index() {
             <TabsTrigger value="setlist">SETLIST</TabsTrigger>
             <TabsTrigger value="mics">MICS</TabsTrigger>
           </TabsList>
-          <Button variant="destructive">LIVE</Button>
+          <Link to="/live">
+            <Button variant="destructive">LIVE</Button>
+          </Link>
         </div>
       </header>
 

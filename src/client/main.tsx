@@ -8,6 +8,7 @@ import {
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { Index } from "./routes";
+import { Live } from "./routes/live";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -23,7 +24,13 @@ const indexRoute = createRoute({
   component: Index,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute]);
+const liveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/live",
+  component: Live,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, liveRoute]);
 
 const router = createRouter({ routeTree });
 
